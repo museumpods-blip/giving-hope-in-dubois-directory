@@ -7,6 +7,8 @@
 
 <title>Giving Hope in DuBois</title>
 
+<link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css"/>
+
 <style>
 
 body{
@@ -63,6 +65,12 @@ background:#2b5cff;
 color:white;
 }
 
+#map{
+height:300px;
+border-radius:10px;
+margin-bottom:20px;
+}
+
 .card{
 background:white;
 border-radius:10px;
@@ -74,29 +82,15 @@ box-shadow:0 2px 6px rgba(0,0,0,0.08);
 .name{
 font-size:18px;
 font-weight:bold;
-margin-bottom:4px;
 }
 
 .address{
-font-size:14px;
 color:#555;
-margin-bottom:8px;
-}
-
-.types{
-color:#666;
-font-size:13px;
-margin-bottom:8px;
-}
-
-.notes{
-margin-bottom:10px;
-font-size:14px;
+margin-bottom:6px;
 }
 
 .phone{
 margin-bottom:10px;
-font-size:14px;
 }
 
 .buttons{
@@ -108,27 +102,13 @@ gap:10px;
 flex:1;
 padding:10px;
 border-radius:6px;
-font-size:14px;
 text-align:center;
 text-decoration:none;
-display:block;
-}
-
-.call{
-background:#28a745;
 color:white;
 }
 
-.directions{
-background:#444;
-color:white;
-}
-
-.status{
-text-align:center;
-margin:20px;
-color:#777;
-}
+.call{background:#28a745;}
+.directions{background:#444;}
 
 </style>
 
@@ -148,13 +128,13 @@ Giving Hope in DuBois
 
 <div id="filters" class="filters"></div>
 
-<div id="status" class="status">
-Loading listings...
-</div>
+<div id="map"></div>
 
 <div id="listings"></div>
 
 </div>
+
+<script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
 
 <script type="module">
 
@@ -165,48 +145,61 @@ const supabaseKey = "sb_publishable_EC399fKXbwpp4pnZfxocLA__yRyugBm"
 
 const supabase = createClient(supabaseUrl, supabaseKey)
 
-let listings = []
-let activeFilter = null
-let searchTerm = ""
+let listings=[]
+let activeFilter=null
+let searchTerm=""
 
-const categoryOrder = [
+const categoryOrder=[
 "food",
 "housing",
+"warming",
 "recovery",
 "church",
 "services",
 "medical",
 "clothing",
-"youth",
-"warming"
+"youth"
 ]
 
+const map=L.map('map').setView([41.12,-78.76],13)
+
+L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{
+attribution:'© OpenStreetMap'
+}).addTo(map)
+
+function extractCoords(link){
+
+if(!link) return null
+
+const match=link.match(/q=(-?\d+\.\d+),(-?\d+\.\d+)/)
+
+if(match){
+return {
+lat:parseFloat(match[1]),
+lng:parseFloat(match[2])
+}
+}
+
+return null
+
+}
+
 function cleanPhone(phone){
-return (phone || "").replace(/[^0-9]/g,'')
+return (phone||"").replace(/[^0-9]/g,'')
 }
 
 async function loadListings(){
 
-const { data, error } = await supabase
+const {data,error}=await supabase
 .from("listings_core")
 .select("*")
 
-const status = document.getElementById("status")
-
 if(error){
-status.innerText = "Error loading listings"
 console.error(error)
 return
 }
 
-if(!data || data.length === 0){
-status.innerText = "No listings yet"
-return
-}
-
-status.style.display = "none"
-
-listings = data
+listings=data
 
 renderFilters()
 renderListings()
@@ -215,40 +208,40 @@ renderListings()
 
 function renderFilters(){
 
-const filterBox = document.getElementById("filters")
+const filterBox=document.getElementById("filters")
 
-const allTypes = new Set()
+const allTypes=new Set()
 
-listings.forEach(l => {
+listings.forEach(l=>{
 if(l.types){
-l.types.forEach(t => allTypes.add(t))
+l.types.forEach(t=>allTypes.add(t))
 }
 })
 
-filterBox.innerHTML = ""
+filterBox.innerHTML=""
 
-const allButton = document.createElement("div")
-allButton.className = "filter active"
-allButton.innerText = "All"
+const allButton=document.createElement("div")
+allButton.className="filter active"
+allButton.innerText="All"
 
-allButton.onclick = () => {
-activeFilter = null
+allButton.onclick=()=>{
+activeFilter=null
 renderListings()
 updateActive(allButton)
 }
 
 filterBox.appendChild(allButton)
 
-categoryOrder.forEach(type => {
+categoryOrder.forEach(type=>{
 
 if(allTypes.has(type)){
 
-const btn = document.createElement("div")
-btn.className = "filter"
-btn.innerText = type
+const btn=document.createElement("div")
+btn.className="filter"
+btn.innerText=type
 
-btn.onclick = () => {
-activeFilter = type
+btn.onclick=()=>{
+activeFilter=type
 renderListings()
 updateActive(btn)
 }
@@ -273,55 +266,52 @@ btn.classList.add("active")
 
 function renderListings(){
 
-const container = document.getElementById("listings")
+const container=document.getElementById("listings")
 
-container.innerHTML = ""
+container.innerHTML=""
 
-let filtered = listings
+map.eachLayer(layer=>{
+if(layer instanceof L.Marker) map.removeLayer(layer)
+})
+
+let filtered=listings
 
 if(activeFilter){
-filtered = filtered.filter(l => l.types && l.types.includes(activeFilter))
+filtered=filtered.filter(l=>l.types && l.types.includes(activeFilter))
 }
 
 if(searchTerm){
-filtered = filtered.filter(l => {
-
-const text =
-(l.name || "") +
-(l.notes || "") +
-(l.location || "") +
-(l.types || "").toString()
-
+filtered=filtered.filter(l=>{
+const text=(l.name||"")+(l.location||"")+(l.notes||"")
 return text.toLowerCase().includes(searchTerm.toLowerCase())
-
 })
 }
 
-filtered.forEach(l => {
+filtered.forEach(l=>{
 
-const phoneClean = cleanPhone(l.contact)
+const coords=extractCoords(l.map_link)
 
-const card = document.createElement("div")
-card.className = "card"
+if(coords){
 
-card.innerHTML = `
-<div class="name">${l.name || ""}</div>
+const marker=L.marker([coords.lat,coords.lng]).addTo(map)
 
-<div class="address">
-${l.location || ""}
-</div>
+marker.bindPopup(`<b>${l.name}</b>`)
 
-<div class="types">${(l.types || []).join(", ")}</div>
+}
 
-<div class="notes">${l.notes || ""}</div>
+const phoneClean=cleanPhone(l.contact)
 
-<div class="phone">
-Phone: ${l.contact || ""}
-</div>
+const card=document.createElement("div")
+card.className="card"
+
+card.innerHTML=`
+<div class="name">${l.name||""}</div>
+<div class="address">${l.location||""}</div>
+<div>${l.notes||""}</div>
+<div class="phone">Phone: ${l.contact||""}</div>
 
 <div class="buttons">
 <a class="btn call" href="tel:${phoneClean}">Call</a>
-
 <a class="btn directions" target="_blank"
 href="https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(l.location)}">
 Directions
@@ -335,8 +325,8 @@ container.appendChild(card)
 
 }
 
-document.getElementById("searchBox").addEventListener("input", e=>{
-searchTerm = e.target.value
+document.getElementById("searchBox").addEventListener("input",e=>{
+searchTerm=e.target.value
 renderListings()
 })
 
