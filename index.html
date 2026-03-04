@@ -12,7 +12,7 @@
 <style>
 
 body{
-font-family: Arial, sans-serif;
+font-family:Arial,sans-serif;
 margin:0;
 background:#f4f4f4;
 }
@@ -32,23 +32,20 @@ margin:auto;
 padding:16px;
 }
 
-.search{
-margin-bottom:16px;
-}
-
 .search input{
 width:100%;
 padding:12px;
 font-size:16px;
 border-radius:8px;
 border:1px solid #ccc;
+margin-bottom:12px;
 }
 
 .filters{
 display:flex;
 flex-wrap:wrap;
 gap:8px;
-margin-bottom:16px;
+margin-bottom:14px;
 }
 
 .filter{
@@ -65,10 +62,6 @@ background:#2b5cff;
 color:white;
 }
 
-.map-tools{
-margin-bottom:10px;
-}
-
 .locate-btn{
 background:#2b5cff;
 color:white;
@@ -76,7 +69,7 @@ border:none;
 padding:10px 14px;
 border-radius:6px;
 cursor:pointer;
-font-size:14px;
+margin-bottom:10px;
 }
 
 #map{
@@ -96,17 +89,11 @@ box-shadow:0 2px 6px rgba(0,0,0,0.08);
 .name{
 font-size:18px;
 font-weight:bold;
-margin-bottom:4px;
 }
 
 .address{
-font-size:14px;
 color:#555;
 margin-bottom:8px;
-}
-
-.phone{
-margin-bottom:10px;
 }
 
 .buttons{
@@ -144,9 +131,7 @@ Giving Hope in DuBois
 
 <div id="filters" class="filters"></div>
 
-<div class="map-tools">
-<button class="locate-btn" id="locateBtn">📍 Locate Me</button>
-</div>
+<button id="locateBtn" class="locate-btn">📍 Locate Me</button>
 
 <div id="map"></div>
 
@@ -166,6 +151,20 @@ const supabaseKey="sb_publishable_EC399fKXbwpp4pnZfxocLA__yRyugBm"
 const supabase=createClient(supabaseUrl,supabaseKey)
 
 let listings=[]
+let activeFilter=null
+let searchTerm=""
+
+const categoryOrder=[
+"food",
+"housing",
+"warming",
+"recovery",
+"church",
+"services",
+"medical",
+"clothing",
+"youth"
+]
 
 const map=L.map('map').setView([41.12,-78.76],12)
 
@@ -195,33 +194,6 @@ function cleanPhone(phone){
 return (phone||"").replace(/[^0-9]/g,'')
 }
 
-function getMarkerColor(types){
-
-if(!types) return "blue"
-
-if(types.includes("food")) return "green"
-if(types.includes("housing")) return "blue"
-if(types.includes("warming")) return "orange"
-if(types.includes("church")) return "purple"
-if(types.includes("medical")) return "red"
-
-return "blue"
-
-}
-
-function createMarker(lat,lng,color){
-
-return L.circleMarker([lat,lng],{
-radius:8,
-fillColor:color,
-color:"#000",
-weight:1,
-opacity:1,
-fillOpacity:0.8
-})
-
-}
-
 async function loadListings(){
 
 const {data,error}=await supabase
@@ -235,7 +207,66 @@ return
 
 listings=data
 
+renderFilters()
 renderListings()
+
+}
+
+function renderFilters(){
+
+const filterBox=document.getElementById("filters")
+
+const allTypes=new Set()
+
+listings.forEach(l=>{
+if(l.types){
+l.types.forEach(t=>allTypes.add(t))
+}
+})
+
+filterBox.innerHTML=""
+
+const allButton=document.createElement("div")
+allButton.className="filter active"
+allButton.innerText="All"
+
+allButton.onclick=()=>{
+activeFilter=null
+renderListings()
+updateActive(allButton)
+}
+
+filterBox.appendChild(allButton)
+
+categoryOrder.forEach(type=>{
+
+if(allTypes.has(type)){
+
+const btn=document.createElement("div")
+btn.className="filter"
+btn.innerText=type
+
+btn.onclick=()=>{
+activeFilter=type
+renderListings()
+updateActive(btn)
+}
+
+filterBox.appendChild(btn)
+
+}
+
+})
+
+}
+
+function updateActive(btn){
+
+document.querySelectorAll(".filter").forEach(f=>{
+f.classList.remove("active")
+})
+
+btn.classList.add("active")
 
 }
 
@@ -247,19 +278,28 @@ container.innerHTML=""
 
 markerGroup.clearLayers()
 
-listings.forEach(l=>{
+let filtered=listings
+
+if(activeFilter){
+filtered=filtered.filter(l=>l.types && l.types.includes(activeFilter))
+}
+
+if(searchTerm){
+filtered=filtered.filter(l=>{
+const text=(l.name||"")+(l.location||"")+(l.notes||"")
+return text.toLowerCase().includes(searchTerm.toLowerCase())
+})
+}
+
+filtered.forEach(l=>{
 
 const coords=extractCoords(l.map_link)
 
 if(coords){
 
-const color=getMarkerColor(l.types)
-
-const marker=createMarker(coords.lat,coords.lng,color)
-
-marker.bindPopup(`<b>${l.name}</b>`)
-
-markerGroup.addLayer(marker)
+const marker=L.marker([coords.lat,coords.lng])
+.addTo(markerGroup)
+.bindPopup(`<b>${l.name}</b>`)
 
 }
 
@@ -272,7 +312,7 @@ card.innerHTML=`
 <div class="name">${l.name||""}</div>
 <div class="address">${l.location||""}</div>
 <div>${l.notes||""}</div>
-<div class="phone">Phone: ${l.contact||""}</div>
+<div>Phone: ${l.contact||""}</div>
 
 <div class="buttons">
 <a class="btn call" href="tel:${phoneClean}">Call</a>
@@ -292,6 +332,11 @@ map.fitBounds(markerGroup.getBounds(),{padding:[40,40]})
 }
 
 }
+
+document.getElementById("searchBox").addEventListener("input",e=>{
+searchTerm=e.target.value
+renderListings()
+})
 
 document.getElementById("locateBtn").addEventListener("click",()=>{
 
