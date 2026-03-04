@@ -4,9 +4,9 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-<title>Giving Hope in DuBois Directory</title>
+<title>Giving Hope in DuBois</title>
 
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="https://unpkg.com/@supabase/supabase-js@2"></script>
 
 <style>
 
@@ -19,7 +19,7 @@ background:#f4f4f4;
 header{
 background:#2b5cff;
 color:white;
-padding:16px;
+padding:18px;
 text-align:center;
 font-size:22px;
 font-weight:bold;
@@ -29,27 +29,6 @@ font-weight:bold;
 max-width:900px;
 margin:auto;
 padding:16px;
-}
-
-.filters{
-display:flex;
-flex-wrap:wrap;
-gap:8px;
-margin-bottom:16px;
-}
-
-.filter{
-background:white;
-border:1px solid #ddd;
-padding:8px 14px;
-border-radius:20px;
-cursor:pointer;
-font-size:14px;
-}
-
-.filter.active{
-background:#2b5cff;
-color:white;
 }
 
 .card{
@@ -101,6 +80,12 @@ background:#444;
 color:white;
 }
 
+.status{
+text-align:center;
+margin:20px;
+color:#777;
+}
+
 </style>
 </head>
 
@@ -112,7 +97,9 @@ Giving Hope in DuBois
 
 <div class="container">
 
-<div class="filters" id="filters"></div>
+<div id="status" class="status">
+Loading listings...
+</div>
 
 <div id="listings"></div>
 
@@ -125,98 +112,36 @@ const supabaseKey = "sb_publishable_EC399fKXbwpp4pnZfxocLA__yRyugBm"
 
 const supabase = window.supabase.createClient(supabaseUrl, supabaseKey)
 
-let listings = []
-let activeFilter = null
-
 async function loadListings(){
 
 const { data, error } = await supabase
 .from("listings_core")
 .select("*")
 
+const status = document.getElementById("status")
+
 if(error){
+status.innerText = "Error loading listings"
 console.error(error)
 return
 }
 
-listings = data
-renderFilters()
-renderListings()
-
+if(!data || data.length === 0){
+status.innerText = "No listings yet"
+return
 }
 
-function renderFilters(){
-
-const filterBox = document.getElementById("filters")
-
-const allTypes = new Set()
-
-listings.forEach(l => {
-if(l.types){
-l.types.forEach(t => allTypes.add(t))
-}
-})
-
-filterBox.innerHTML = ""
-
-const allButton = document.createElement("div")
-allButton.className = "filter active"
-allButton.innerText = "All"
-allButton.onclick = () => {
-activeFilter = null
-renderListings()
-updateActive(allButton)
-}
-
-filterBox.appendChild(allButton)
-
-allTypes.forEach(type => {
-
-const btn = document.createElement("div")
-btn.className = "filter"
-btn.innerText = type
-
-btn.onclick = () => {
-activeFilter = type
-renderListings()
-updateActive(btn)
-}
-
-filterBox.appendChild(btn)
-
-})
-
-}
-
-function updateActive(btn){
-
-document.querySelectorAll(".filter").forEach(f=>{
-f.classList.remove("active")
-})
-
-btn.classList.add("active")
-
-}
-
-function renderListings(){
+status.style.display = "none"
 
 const container = document.getElementById("listings")
 
-container.innerHTML = ""
-
-let filtered = listings
-
-if(activeFilter){
-filtered = listings.filter(l => l.types && l.types.includes(activeFilter))
-}
-
-filtered.forEach(l => {
+data.forEach(l => {
 
 const card = document.createElement("div")
 card.className = "card"
 
 card.innerHTML = `
-<div class="name">${l.name}</div>
+<div class="name">${l.name || ""}</div>
 <div class="types">${(l.types || []).join(", ")}</div>
 <div class="notes">${l.notes || ""}</div>
 
