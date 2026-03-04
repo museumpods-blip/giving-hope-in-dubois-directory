@@ -83,13 +83,14 @@ display:flex;
 gap:10px;
 }
 
-button{
+.btn{
 flex:1;
 padding:10px;
-border:none;
 border-radius:6px;
 font-size:14px;
-cursor:pointer;
+text-align:center;
+text-decoration:none;
+display:block;
 }
 
 .call{
@@ -141,7 +142,7 @@ let listings = []
 let activeFilter = null
 
 function cleanPhone(phone){
-return phone.replace(/[^0-9]/g,'')
+return (phone || "").replace(/[^0-9]/g,'')
 }
 
 async function loadListings(){
@@ -240,7 +241,7 @@ filtered = listings.filter(l => l.types && l.types.includes(activeFilter))
 
 filtered.forEach(l => {
 
-const clean = cleanPhone(l.contact || "")
+const phoneClean = cleanPhone(l.contact)
 
 const card = document.createElement("div")
 card.className = "card"
@@ -255,8 +256,9 @@ Phone: ${l.contact || ""}
 </div>
 
 <div class="buttons">
-<button class="call" onclick="window.location.href='tel:${clean}'">Call</button>
-<button class="directions" onclick="window.open('https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(l.location)}')">Directions</button>
+<a class="btn call" href="tel:${phoneClean}">Call</a>
+<a class="btn directions" target="_blank"
+href="https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(l.location)}">Directions</a>
 </div>
 `
 
