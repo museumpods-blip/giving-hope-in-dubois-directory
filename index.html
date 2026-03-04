@@ -1,15 +1,11 @@
 <!DOCTYPE html>
 <html lang="en">
-
 <head>
-
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-
 <title>Giving Hope in DuBois</title>
 
 <style>
-
 body{
 font-family: Arial, sans-serif;
 margin:0;
@@ -77,6 +73,11 @@ margin-bottom:10px;
 font-size:14px;
 }
 
+.phone{
+margin-bottom:10px;
+font-size:14px;
+}
+
 .buttons{
 display:flex;
 gap:10px;
@@ -106,9 +107,7 @@ text-align:center;
 margin:20px;
 color:#777;
 }
-
 </style>
-
 </head>
 
 <body>
@@ -140,6 +139,10 @@ const supabase = createClient(supabaseUrl, supabaseKey)
 
 let listings = []
 let activeFilter = null
+
+function cleanPhone(phone){
+return phone.replace(/[^0-9]/g,'')
+}
 
 async function loadListings(){
 
@@ -237,6 +240,8 @@ filtered = listings.filter(l => l.types && l.types.includes(activeFilter))
 
 filtered.forEach(l => {
 
+const clean = cleanPhone(l.contact || "")
+
 const card = document.createElement("div")
 card.className = "card"
 
@@ -245,8 +250,12 @@ card.innerHTML = `
 <div class="types">${(l.types || []).join(", ")}</div>
 <div class="notes">${l.notes || ""}</div>
 
+<div class="phone">
+Phone: ${l.contact || ""}
+</div>
+
 <div class="buttons">
-<button class="call" onclick="window.location.href='tel:${l.contact}'">Call</button>
+<button class="call" onclick="window.location.href='tel:${clean}'">Call</button>
 <button class="directions" onclick="window.open('https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(l.location)}')">Directions</button>
 </div>
 `
@@ -262,5 +271,4 @@ loadListings()
 </script>
 
 </body>
-
 </html>
