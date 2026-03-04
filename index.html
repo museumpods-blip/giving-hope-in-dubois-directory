@@ -91,10 +91,6 @@ color:#555;
 margin-bottom:8px;
 }
 
-.notes{
-margin-bottom:10px;
-}
-
 .phone{
 margin-bottom:10px;
 }
@@ -155,18 +151,6 @@ let listings=[]
 let activeFilter=null
 let searchTerm=""
 
-const categoryOrder=[
-"food",
-"housing",
-"warming",
-"recovery",
-"church",
-"services",
-"medical",
-"clothing",
-"youth"
-]
-
 const map=L.map('map').setView([41.12,-78.76],12)
 
 L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{
@@ -195,6 +179,33 @@ function cleanPhone(phone){
 return (phone||"").replace(/[^0-9]/g,'')
 }
 
+function getMarkerColor(types){
+
+if(!types) return "blue"
+
+if(types.includes("food")) return "green"
+if(types.includes("housing")) return "blue"
+if(types.includes("warming")) return "orange"
+if(types.includes("church")) return "purple"
+if(types.includes("medical")) return "red"
+
+return "blue"
+
+}
+
+function createMarker(lat,lng,color){
+
+return L.circleMarker([lat,lng],{
+radius:8,
+fillColor:color,
+color:"#000",
+weight:1,
+opacity:1,
+fillOpacity:0.8
+})
+
+}
+
 async function loadListings(){
 
 const {data,error}=await supabase
@@ -208,66 +219,7 @@ return
 
 listings=data
 
-renderFilters()
 renderListings()
-
-}
-
-function renderFilters(){
-
-const filterBox=document.getElementById("filters")
-
-const allTypes=new Set()
-
-listings.forEach(l=>{
-if(l.types){
-l.types.forEach(t=>allTypes.add(t))
-}
-})
-
-filterBox.innerHTML=""
-
-const allButton=document.createElement("div")
-allButton.className="filter active"
-allButton.innerText="All"
-
-allButton.onclick=()=>{
-activeFilter=null
-renderListings()
-updateActive(allButton)
-}
-
-filterBox.appendChild(allButton)
-
-categoryOrder.forEach(type=>{
-
-if(allTypes.has(type)){
-
-const btn=document.createElement("div")
-btn.className="filter"
-btn.innerText=type
-
-btn.onclick=()=>{
-activeFilter=type
-renderListings()
-updateActive(btn)
-}
-
-filterBox.appendChild(btn)
-
-}
-
-})
-
-}
-
-function updateActive(btn){
-
-document.querySelectorAll(".filter").forEach(f=>{
-f.classList.remove("active")
-})
-
-btn.classList.add("active")
 
 }
 
@@ -279,27 +231,18 @@ container.innerHTML=""
 
 markerGroup.clearLayers()
 
-let filtered=listings
-
-if(activeFilter){
-filtered=filtered.filter(l=>l.types && l.types.includes(activeFilter))
-}
-
-if(searchTerm){
-filtered=filtered.filter(l=>{
-const text=(l.name||"")+(l.location||"")+(l.notes||"")
-return text.toLowerCase().includes(searchTerm.toLowerCase())
-})
-}
-
-filtered.forEach(l=>{
+listings.forEach(l=>{
 
 const coords=extractCoords(l.map_link)
 
 if(coords){
 
-const marker=L.marker([coords.lat,coords.lng])
+const color=getMarkerColor(l.types)
+
+const marker=createMarker(coords.lat,coords.lng,color)
+
 marker.bindPopup(`<b>${l.name}</b>`)
+
 markerGroup.addLayer(marker)
 
 }
@@ -312,7 +255,7 @@ card.className="card"
 card.innerHTML=`
 <div class="name">${l.name||""}</div>
 <div class="address">${l.location||""}</div>
-<div class="notes">${l.notes||""}</div>
+<div>${l.notes||""}</div>
 <div class="phone">Phone: ${l.contact||""}</div>
 
 <div class="buttons">
@@ -333,11 +276,6 @@ map.fitBounds(markerGroup.getBounds(),{padding:[40,40]})
 }
 
 }
-
-document.getElementById("searchBox").addEventListener("input",e=>{
-searchTerm=e.target.value
-renderListings()
-})
 
 loadListings()
 
