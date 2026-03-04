@@ -66,7 +66,7 @@ color:white;
 }
 
 #map{
-height:300px;
+height:320px;
 border-radius:10px;
 margin-bottom:20px;
 }
@@ -82,11 +82,17 @@ box-shadow:0 2px 6px rgba(0,0,0,0.08);
 .name{
 font-size:18px;
 font-weight:bold;
+margin-bottom:4px;
 }
 
 .address{
+font-size:14px;
 color:#555;
-margin-bottom:6px;
+margin-bottom:8px;
+}
+
+.notes{
+margin-bottom:10px;
 }
 
 .phone{
@@ -140,10 +146,10 @@ Giving Hope in DuBois
 
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2"
 
-const supabaseUrl = "https://jvnmqvdgnywtgjcyagiu.supabase.co"
-const supabaseKey = "sb_publishable_EC399fKXbwpp4pnZfxocLA__yRyugBm"
+const supabaseUrl="https://jvnmqvdgnywtgjcyagiu.supabase.co"
+const supabaseKey="sb_publishable_EC399fKXbwpp4pnZfxocLA__yRyugBm"
 
-const supabase = createClient(supabaseUrl, supabaseKey)
+const supabase=createClient(supabaseUrl,supabaseKey)
 
 let listings=[]
 let activeFilter=null
@@ -161,11 +167,13 @@ const categoryOrder=[
 "youth"
 ]
 
-const map=L.map('map').setView([41.12,-78.76],13)
+const map=L.map('map').setView([41.12,-78.76],12)
 
 L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{
 attribution:'© OpenStreetMap'
 }).addTo(map)
+
+let markerGroup=L.featureGroup().addTo(map)
 
 function extractCoords(link){
 
@@ -174,14 +182,13 @@ if(!link) return null
 const match=link.match(/q=(-?\d+\.\d+),(-?\d+\.\d+)/)
 
 if(match){
-return {
+return{
 lat:parseFloat(match[1]),
 lng:parseFloat(match[2])
 }
 }
 
 return null
-
 }
 
 function cleanPhone(phone){
@@ -270,9 +277,7 @@ const container=document.getElementById("listings")
 
 container.innerHTML=""
 
-map.eachLayer(layer=>{
-if(layer instanceof L.Marker) map.removeLayer(layer)
-})
+markerGroup.clearLayers()
 
 let filtered=listings
 
@@ -293,9 +298,9 @@ const coords=extractCoords(l.map_link)
 
 if(coords){
 
-const marker=L.marker([coords.lat,coords.lng]).addTo(map)
-
+const marker=L.marker([coords.lat,coords.lng])
 marker.bindPopup(`<b>${l.name}</b>`)
+markerGroup.addLayer(marker)
 
 }
 
@@ -307,7 +312,7 @@ card.className="card"
 card.innerHTML=`
 <div class="name">${l.name||""}</div>
 <div class="address">${l.location||""}</div>
-<div>${l.notes||""}</div>
+<div class="notes">${l.notes||""}</div>
 <div class="phone">Phone: ${l.contact||""}</div>
 
 <div class="buttons">
@@ -322,6 +327,10 @@ Directions
 container.appendChild(card)
 
 })
+
+if(markerGroup.getLayers().length>0){
+map.fitBounds(markerGroup.getBounds(),{padding:[40,40]})
+}
 
 }
 
