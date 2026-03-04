@@ -65,6 +65,20 @@ background:#2b5cff;
 color:white;
 }
 
+.map-tools{
+margin-bottom:10px;
+}
+
+.locate-btn{
+background:#2b5cff;
+color:white;
+border:none;
+padding:10px 14px;
+border-radius:6px;
+cursor:pointer;
+font-size:14px;
+}
+
 #map{
 height:320px;
 border-radius:10px;
@@ -130,6 +144,10 @@ Giving Hope in DuBois
 
 <div id="filters" class="filters"></div>
 
+<div class="map-tools">
+<button class="locate-btn" id="locateBtn">📍 Locate Me</button>
+</div>
+
 <div id="map"></div>
 
 <div id="listings"></div>
@@ -148,8 +166,6 @@ const supabaseKey="sb_publishable_EC399fKXbwpp4pnZfxocLA__yRyugBm"
 const supabase=createClient(supabaseUrl,supabaseKey)
 
 let listings=[]
-let activeFilter=null
-let searchTerm=""
 
 const map=L.map('map').setView([41.12,-78.76],12)
 
@@ -276,6 +292,29 @@ map.fitBounds(markerGroup.getBounds(),{padding:[40,40]})
 }
 
 }
+
+document.getElementById("locateBtn").addEventListener("click",()=>{
+
+if(!navigator.geolocation){
+alert("Geolocation not supported")
+return
+}
+
+navigator.geolocation.getCurrentPosition(position=>{
+
+const lat=position.coords.latitude
+const lng=position.coords.longitude
+
+map.setView([lat,lng],14)
+
+L.marker([lat,lng])
+.addTo(map)
+.bindPopup("You are here")
+.openPopup()
+
+})
+
+})
 
 loadListings()
 
