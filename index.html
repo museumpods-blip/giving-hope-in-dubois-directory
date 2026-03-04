@@ -1,11 +1,14 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
+
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
 <title>Giving Hope in DuBois</title>
 
 <style>
+
 body{
 font-family: Arial, sans-serif;
 margin:0;
@@ -25,6 +28,18 @@ font-weight:bold;
 max-width:900px;
 margin:auto;
 padding:16px;
+}
+
+.search{
+margin-bottom:16px;
+}
+
+.search input{
+width:100%;
+padding:12px;
+font-size:16px;
+border-radius:8px;
+border:1px solid #ccc;
 }
 
 .filters{
@@ -59,12 +74,18 @@ box-shadow:0 2px 6px rgba(0,0,0,0.08);
 .name{
 font-size:18px;
 font-weight:bold;
-margin-bottom:6px;
+margin-bottom:4px;
+}
+
+.address{
+font-size:14px;
+color:#555;
+margin-bottom:8px;
 }
 
 .types{
 color:#666;
-font-size:14px;
+font-size:13px;
 margin-bottom:8px;
 }
 
@@ -108,7 +129,9 @@ text-align:center;
 margin:20px;
 color:#777;
 }
+
 </style>
+
 </head>
 
 <body>
@@ -118,6 +141,10 @@ Giving Hope in DuBois
 </header>
 
 <div class="container">
+
+<div class="search">
+<input id="searchBox" type="text" placeholder="Search services...">
+</div>
 
 <div id="filters" class="filters"></div>
 
@@ -140,6 +167,18 @@ const supabase = createClient(supabaseUrl, supabaseKey)
 
 let listings = []
 let activeFilter = null
+let searchTerm = ""
+
+const categoryOrder = [
+"food",
+"housing",
+"recovery",
+"church",
+"services",
+"medical",
+"clothing",
+"youth"
+]
 
 function cleanPhone(phone){
 return (phone || "").replace(/[^0-9]/g,'')
@@ -199,7 +238,9 @@ updateActive(allButton)
 
 filterBox.appendChild(allButton)
 
-allTypes.forEach(type => {
+categoryOrder.forEach(type => {
+
+if(allTypes.has(type)){
 
 const btn = document.createElement("div")
 btn.className = "filter"
@@ -212,6 +253,8 @@ updateActive(btn)
 }
 
 filterBox.appendChild(btn)
+
+}
 
 })
 
@@ -236,7 +279,21 @@ container.innerHTML = ""
 let filtered = listings
 
 if(activeFilter){
-filtered = listings.filter(l => l.types && l.types.includes(activeFilter))
+filtered = filtered.filter(l => l.types && l.types.includes(activeFilter))
+}
+
+if(searchTerm){
+filtered = filtered.filter(l => {
+
+const text =
+(l.name || "") +
+(l.notes || "") +
+(l.location || "") +
+(l.types || "").toString()
+
+return text.toLowerCase().includes(searchTerm.toLowerCase())
+
+})
 }
 
 filtered.forEach(l => {
@@ -248,7 +305,13 @@ card.className = "card"
 
 card.innerHTML = `
 <div class="name">${l.name || ""}</div>
+
+<div class="address">
+${l.location || ""}
+</div>
+
 <div class="types">${(l.types || []).join(", ")}</div>
+
 <div class="notes">${l.notes || ""}</div>
 
 <div class="phone">
@@ -257,8 +320,11 @@ Phone: ${l.contact || ""}
 
 <div class="buttons">
 <a class="btn call" href="tel:${phoneClean}">Call</a>
+
 <a class="btn directions" target="_blank"
-href="https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(l.location)}">Directions</a>
+href="https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(l.location)}">
+Directions
+</a>
 </div>
 `
 
@@ -267,6 +333,11 @@ container.appendChild(card)
 })
 
 }
+
+document.getElementById("searchBox").addEventListener("input", e=>{
+searchTerm = e.target.value
+renderListings()
+})
 
 loadListings()
 
