@@ -1,87 +1,114 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
+
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
 <title>Giving Hope in DuBois</title>
 
 <style>
+
 body{
-  font-family: Arial, sans-serif;
-  margin:0;
-  background:#f4f4f4;
+font-family: Arial, sans-serif;
+margin:0;
+background:#f4f4f4;
 }
 
 header{
-  background:#2b5cff;
-  color:white;
-  padding:18px;
-  text-align:center;
-  font-size:22px;
-  font-weight:bold;
+background:#2b5cff;
+color:white;
+padding:18px;
+text-align:center;
+font-size:22px;
+font-weight:bold;
 }
 
 .container{
-  max-width:900px;
-  margin:auto;
-  padding:16px;
+max-width:900px;
+margin:auto;
+padding:16px;
+}
+
+.filters{
+display:flex;
+flex-wrap:wrap;
+gap:8px;
+margin-bottom:16px;
+}
+
+.filter{
+background:white;
+border:1px solid #ddd;
+padding:8px 14px;
+border-radius:20px;
+cursor:pointer;
+font-size:14px;
+}
+
+.filter.active{
+background:#2b5cff;
+color:white;
 }
 
 .card{
-  background:white;
-  border-radius:10px;
-  padding:16px;
-  margin-bottom:12px;
-  box-shadow:0 2px 6px rgba(0,0,0,0.08);
+background:white;
+border-radius:10px;
+padding:16px;
+margin-bottom:12px;
+box-shadow:0 2px 6px rgba(0,0,0,0.08);
 }
 
 .name{
-  font-size:18px;
-  font-weight:bold;
-  margin-bottom:6px;
+font-size:18px;
+font-weight:bold;
+margin-bottom:6px;
 }
 
 .types{
-  color:#666;
-  font-size:14px;
-  margin-bottom:8px;
+color:#666;
+font-size:14px;
+margin-bottom:8px;
 }
 
 .notes{
-  margin-bottom:10px;
-  font-size:14px;
+margin-bottom:10px;
+font-size:14px;
 }
 
 .buttons{
-  display:flex;
-  gap:10px;
+display:flex;
+gap:10px;
 }
 
 button{
-  flex:1;
-  padding:10px;
-  border:none;
-  border-radius:6px;
-  font-size:14px;
-  cursor:pointer;
+flex:1;
+padding:10px;
+border:none;
+border-radius:6px;
+font-size:14px;
+cursor:pointer;
 }
 
 .call{
-  background:#28a745;
-  color:white;
+background:#28a745;
+color:white;
 }
 
 .directions{
-  background:#444;
-  color:white;
+background:#444;
+color:white;
 }
 
 .status{
-  text-align:center;
-  margin:20px;
-  color:#777;
+text-align:center;
+margin:20px;
+color:#777;
 }
+
 </style>
+
 </head>
 
 <body>
@@ -91,6 +118,8 @@ Giving Hope in DuBois
 </header>
 
 <div class="container">
+
+<div id="filters" class="filters"></div>
 
 <div id="status" class="status">
 Loading listings...
@@ -109,48 +138,122 @@ const supabaseKey = "sb_publishable_EC399fKXbwpp4pnZfxocLA__yRyugBm"
 
 const supabase = createClient(supabaseUrl, supabaseKey)
 
+let listings = []
+let activeFilter = null
+
 async function loadListings(){
 
-  const { data, error } = await supabase
-    .from("listings_core")
-    .select("*")
+const { data, error } = await supabase
+.from("listings_core")
+.select("*")
 
-  const status = document.getElementById("status")
+const status = document.getElementById("status")
 
-  if(error){
-    status.innerText = "Error loading listings"
-    console.error(error)
-    return
-  }
+if(error){
+status.innerText = "Error loading listings"
+console.error(error)
+return
+}
 
-  if(!data || data.length === 0){
-    status.innerText = "No listings yet"
-    return
-  }
+if(!data || data.length === 0){
+status.innerText = "No listings yet"
+return
+}
 
-  status.style.display = "none"
+status.style.display = "none"
 
-  const container = document.getElementById("listings")
+listings = data
 
-  data.forEach(l => {
+renderFilters()
+renderListings()
 
-    const card = document.createElement("div")
-    card.className = "card"
+}
 
-    card.innerHTML = `
-      <div class="name">${l.name || ""}</div>
-      <div class="types">${(l.types || []).join(", ")}</div>
-      <div class="notes">${l.notes || ""}</div>
+function renderFilters(){
 
-      <div class="buttons">
-        <button class="call" onclick="window.location.href='tel:${l.contact}'">Call</button>
-        <button class="directions" onclick="window.open('https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(l.location)}')">Directions</button>
-      </div>
-    `
+const filterBox = document.getElementById("filters")
 
-    container.appendChild(card)
+const allTypes = new Set()
 
-  })
+listings.forEach(l => {
+if(l.types){
+l.types.forEach(t => allTypes.add(t))
+}
+})
+
+filterBox.innerHTML = ""
+
+const allButton = document.createElement("div")
+allButton.className = "filter active"
+allButton.innerText = "All"
+
+allButton.onclick = () => {
+activeFilter = null
+renderListings()
+updateActive(allButton)
+}
+
+filterBox.appendChild(allButton)
+
+allTypes.forEach(type => {
+
+const btn = document.createElement("div")
+btn.className = "filter"
+btn.innerText = type
+
+btn.onclick = () => {
+activeFilter = type
+renderListings()
+updateActive(btn)
+}
+
+filterBox.appendChild(btn)
+
+})
+
+}
+
+function updateActive(btn){
+
+document.querySelectorAll(".filter").forEach(f=>{
+f.classList.remove("active")
+})
+
+btn.classList.add("active")
+
+}
+
+function renderListings(){
+
+const container = document.getElementById("listings")
+
+container.innerHTML = ""
+
+let filtered = listings
+
+if(activeFilter){
+filtered = listings.filter(l => l.types && l.types.includes(activeFilter))
+}
+
+filtered.forEach(l => {
+
+const card = document.createElement("div")
+card.className = "card"
+
+card.innerHTML = `
+<div class="name">${l.name || ""}</div>
+<div class="types">${(l.types || []).join(", ")}</div>
+<div class="notes">${l.notes || ""}</div>
+
+<div class="buttons">
+<button class="call" onclick="window.location.href='tel:${l.contact}'">Call</button>
+<button class="directions" onclick="window.open('https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(l.location)}')">Directions</button>
+</div>
+`
+
+container.appendChild(card)
+
+})
 
 }
 
@@ -159,4 +262,5 @@ loadListings()
 </script>
 
 </body>
+
 </html>
