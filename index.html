@@ -1,369 +1,41 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
+<section id="submit-listing" class="submit-section">
+  <div class="submit-container">
 
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <h2>Add a Community Resource</h2>
 
-<title>Giving Hope in DuBois</title>
+    <p class="submit-intro">
+      Do you know a food pantry, shelter, church service, recovery meeting, or other
+      resource that should be included in the directory?
+    </p>
 
-<link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css"/>
+    <p class="submit-intro">
+      Email the information below and our team will review it before adding it to the directory.
+    </p>
 
-<style>
+    <div class="submit-template">
 
-body{
-font-family:Arial,sans-serif;
-margin:0;
-background:#f4f4f4;
-}
+<pre>
+Organization Name:
 
-header{
-background:#2b5cff;
-color:white;
-padding:18px;
-text-align:center;
-font-size:22px;
-font-weight:bold;
-}
+Category (food, housing, warming, recovery, church, services, medical, clothing, youth):
 
-.container{
-max-width:900px;
-margin:auto;
-padding:16px;
-}
+Address / Location:
 
-.search input{
-width:100%;
-padding:12px;
-font-size:16px;
-border-radius:8px;
-border:1px solid #ccc;
-margin-bottom:12px;
-}
+Phone Number:
 
-.filters{
-display:flex;
-flex-wrap:wrap;
-gap:8px;
-margin-bottom:14px;
-}
+Notes (hours, requirements, services offered):
 
-.filter{
-background:white;
-border:1px solid #ddd;
-padding:8px 14px;
-border-radius:20px;
-cursor:pointer;
-font-size:14px;
-}
+Google Maps Link:
+</pre>
 
-.filter.active{
-background:#2b5cff;
-color:white;
-}
+    </div>
 
-.locate-btn{
-background:#2b5cff;
-color:white;
-border:none;
-padding:10px 14px;
-border-radius:6px;
-cursor:pointer;
-margin-bottom:10px;
-}
+    <a 
+      class="submit-button"
+      href="mailto:givinghopedubois@gmail.com?subject=Directory Listing Submission&body=Organization Name:%0D%0A%0D%0ACategory:%0D%0A%0D%0AAddress / Location:%0D%0A%0D%0APhone Number:%0D%0A%0D%0ANotes:%0D%0A%0D%0AGoogle Maps Link:%0D%0A"
+    >
+      Submit a Resource by Email
+    </a>
 
-#map{
-height:320px;
-border-radius:10px;
-margin-bottom:20px;
-}
-
-.card{
-background:white;
-border-radius:10px;
-padding:16px;
-margin-bottom:12px;
-box-shadow:0 2px 6px rgba(0,0,0,0.08);
-}
-
-.name{
-font-size:18px;
-font-weight:bold;
-}
-
-.address{
-color:#555;
-margin-bottom:8px;
-}
-
-.buttons{
-display:flex;
-gap:10px;
-}
-
-.btn{
-flex:1;
-padding:10px;
-border-radius:6px;
-text-align:center;
-text-decoration:none;
-color:white;
-}
-
-.call{background:#28a745;}
-.directions{background:#444;}
-
-</style>
-
-</head>
-
-<body>
-
-<header>
-Giving Hope in DuBois
-</header>
-
-<div class="container">
-
-<div class="search">
-<input id="searchBox" type="text" placeholder="Search services...">
-</div>
-
-<div id="filters" class="filters"></div>
-
-<button id="locateBtn" class="locate-btn">📍 Locate Me</button>
-
-<div id="map"></div>
-
-<div id="listings"></div>
-
-</div>
-
-<script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
-
-<script type="module">
-
-import { createClient } from "https://esm.sh/@supabase/supabase-js@2"
-
-const supabaseUrl="https://jvnmqvdgnywtgjcyagiu.supabase.co"
-const supabaseKey="sb_publishable_EC399fKXbwpp4pnZfxocLA__yRyugBm"
-
-const supabase=createClient(supabaseUrl,supabaseKey)
-
-let listings=[]
-let activeFilter=null
-let searchTerm=""
-
-const categoryOrder=[
-"food",
-"housing",
-"warming",
-"recovery",
-"church",
-"services",
-"medical",
-"clothing",
-"youth"
-]
-
-const map=L.map('map').setView([41.12,-78.76],12)
-
-L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{
-attribution:'© OpenStreetMap'
-}).addTo(map)
-
-let markerGroup=L.featureGroup().addTo(map)
-
-function extractCoords(link){
-
-if(!link) return null
-
-const match=link.match(/q=(-?\d+\.\d+),(-?\d+\.\d+)/)
-
-if(match){
-return{
-lat:parseFloat(match[1]),
-lng:parseFloat(match[2])
-}
-}
-
-return null
-}
-
-function cleanPhone(phone){
-return (phone||"").replace(/[^0-9]/g,'')
-}
-
-async function loadListings(){
-
-const {data,error}=await supabase
-.from("listings_core")
-.select("*")
-
-if(error){
-console.error(error)
-return
-}
-
-listings=data
-
-renderFilters()
-renderListings()
-
-}
-
-function renderFilters(){
-
-const filterBox=document.getElementById("filters")
-
-const allTypes=new Set()
-
-listings.forEach(l=>{
-if(l.types){
-l.types.forEach(t=>allTypes.add(t))
-}
-})
-
-filterBox.innerHTML=""
-
-const allButton=document.createElement("div")
-allButton.className="filter active"
-allButton.innerText="All"
-
-allButton.onclick=()=>{
-activeFilter=null
-renderListings()
-updateActive(allButton)
-}
-
-filterBox.appendChild(allButton)
-
-categoryOrder.forEach(type=>{
-
-if(allTypes.has(type)){
-
-const btn=document.createElement("div")
-btn.className="filter"
-btn.innerText=type
-
-btn.onclick=()=>{
-activeFilter=type
-renderListings()
-updateActive(btn)
-}
-
-filterBox.appendChild(btn)
-
-}
-
-})
-
-}
-
-function updateActive(btn){
-
-document.querySelectorAll(".filter").forEach(f=>{
-f.classList.remove("active")
-})
-
-btn.classList.add("active")
-
-}
-
-function renderListings(){
-
-const container=document.getElementById("listings")
-
-container.innerHTML=""
-
-markerGroup.clearLayers()
-
-let filtered=listings
-
-if(activeFilter){
-filtered=filtered.filter(l=>l.types && l.types.includes(activeFilter))
-}
-
-if(searchTerm){
-filtered=filtered.filter(l=>{
-const text=(l.name||"")+(l.location||"")+(l.notes||"")
-return text.toLowerCase().includes(searchTerm.toLowerCase())
-})
-}
-
-filtered.forEach(l=>{
-
-const coords=extractCoords(l.map_link)
-
-if(coords){
-
-const marker=L.marker([coords.lat,coords.lng])
-.addTo(markerGroup)
-.bindPopup(`<b>${l.name}</b>`)
-
-}
-
-const phoneClean=cleanPhone(l.contact)
-
-const card=document.createElement("div")
-card.className="card"
-
-card.innerHTML=`
-<div class="name">${l.name||""}</div>
-<div class="address">${l.location||""}</div>
-<div>${l.notes||""}</div>
-<div>Phone: ${l.contact||""}</div>
-
-<div class="buttons">
-<a class="btn call" href="tel:${phoneClean}">Call</a>
-<a class="btn directions" target="_blank"
-href="https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(l.location)}">
-Directions
-</a>
-</div>
-`
-
-container.appendChild(card)
-
-})
-
-if(markerGroup.getLayers().length>0){
-map.fitBounds(markerGroup.getBounds(),{padding:[40,40]})
-}
-
-}
-
-document.getElementById("searchBox").addEventListener("input",e=>{
-searchTerm=e.target.value
-renderListings()
-})
-
-document.getElementById("locateBtn").addEventListener("click",()=>{
-
-if(!navigator.geolocation){
-alert("Geolocation not supported")
-return
-}
-
-navigator.geolocation.getCurrentPosition(position=>{
-
-const lat=position.coords.latitude
-const lng=position.coords.longitude
-
-map.setView([lat,lng],14)
-
-L.marker([lat,lng])
-.addTo(map)
-.bindPopup("You are here")
-.openPopup()
-
-})
-
-})
-
-loadListings()
-
-</script>
-
-</body>
-</html>
+  </div>
+</section>
