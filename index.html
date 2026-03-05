@@ -10,7 +10,6 @@
 <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css"/>
 
 <style>
-
 body{
 font-family:Arial,sans-serif;
 margin:0;
@@ -55,6 +54,7 @@ padding:8px 14px;
 border-radius:20px;
 cursor:pointer;
 font-size:14px;
+text-transform:capitalize;
 }
 
 .filter.active{
@@ -113,7 +113,6 @@ color:white;
 
 .call{background:#28a745;}
 .directions{background:#444;}
-
 </style>
 
 </head>
@@ -127,7 +126,7 @@ JustOffI80 – DuBois Exit Guide
 <div class="container">
 
 <div class="search">
-<input id="searchBox" type="text" placeholder="Search services...">
+<input id="searchBox" type="text" placeholder="Search...">
 </div>
 
 <div id="filters" class="filters"></div>
@@ -155,7 +154,7 @@ let listings=[]
 let activeFilter=null
 let searchTerm=""
 
-const categoryOrder=[
+const preferredOrder=[
 "food",
 "housing",
 "warming",
@@ -179,7 +178,6 @@ function extractCoords(link){
 
 if(!link) return null
 
-// Support @lat,lng format
 let match = link.match(/@(-?\d+\.\d+),(-?\d+\.\d+)/)
 
 if(match){
@@ -189,7 +187,6 @@ lng:parseFloat(match[2])
 }
 }
 
-// Support q=lat,lng format
 match = link.match(/q=(-?\d+\.\d+),(-?\d+\.\d+)/)
 
 if(match){
@@ -218,7 +215,6 @@ return
 }
 
 listings=data
-
 renderFilters()
 renderListings()
 
@@ -227,47 +223,51 @@ renderListings()
 function renderFilters(){
 
 const filterBox=document.getElementById("filters")
+filterBox.innerHTML=""
 
 const allTypes=new Set()
 
 listings.forEach(l=>{
 if(l.types){
-l.types.forEach(t=>allTypes.add(t))
+l.types.forEach(t=>{
+allTypes.add(t.toLowerCase())
+})
 }
 })
-
-filterBox.innerHTML=""
 
 const allButton=document.createElement("div")
 allButton.className="filter active"
 allButton.innerText="All"
-
 allButton.onclick=()=>{
 activeFilter=null
 renderListings()
 updateActive(allButton)
 }
-
 filterBox.appendChild(allButton)
 
-categoryOrder.forEach(type=>{
-
-if(allTypes.has(type)){
-
+function createButton(type){
 const btn=document.createElement("div")
 btn.className="filter"
 btn.innerText=type
-
 btn.onclick=()=>{
 activeFilter=type
 renderListings()
 updateActive(btn)
 }
-
 filterBox.appendChild(btn)
-
 }
 
+// Preferred categories first
+preferredOrder.forEach(type=>{
+if(allTypes.has(type)){
+createButton(type)
+allTypes.delete(type)
+}
+})
+
+// Then any additional categories dynamically
+allTypes.forEach(type=>{
+createButton(type)
 })
 
 }
@@ -282,14 +282,15 @@ btn.classList.add("active")
 function renderListings(){
 
 const container=document.getElementById("listings")
-
 container.innerHTML=""
 markerGroup.clearLayers()
 
 let filtered=listings
 
 if(activeFilter){
-filtered=filtered.filter(l=>l.types && l.types.includes(activeFilter))
+filtered=filtered.filter(l=>
+l.types && l.types.map(t=>t.toLowerCase()).includes(activeFilter)
+)
 }
 
 if(searchTerm){
