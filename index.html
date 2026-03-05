@@ -14,7 +14,7 @@ header{background:#2b5cff;color:white;padding:18px;text-align:center;font-size:2
 .filters{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:14px;}
 .filter{background:white;border:1px solid #ddd;padding:8px 14px;border-radius:20px;cursor:pointer;font-size:14px;text-transform:capitalize;}
 .filter.active{background:#2b5cff;color:white;}
-.locate-btn, .submit-btn{
+.locate-btn,.submit-btn{
 background:#2b5cff;color:white;border:none;padding:10px 14px;
 border-radius:6px;cursor:pointer;margin-bottom:10px;margin-right:6px;
 }
@@ -31,7 +31,7 @@ border-radius:6px;cursor:pointer;margin-bottom:10px;margin-right:6px;
 background:white;padding:16px;border-radius:10px;margin-bottom:20px;
 box-shadow:0 2px 6px rgba(0,0,0,0.08);display:none;
 }
-.form-box input, .form-box textarea{
+.form-box input,.form-box textarea{
 width:100%;padding:10px;margin-bottom:10px;border-radius:6px;border:1px solid #ccc;
 }
 .success{color:green;font-weight:bold;margin-top:10px;}
@@ -49,11 +49,10 @@ width:100%;padding:10px;margin-bottom:10px;border-radius:6px;border:1px solid #c
 
 <div id="submissionForm" class="form-box">
 <h3>Submit a Listing</h3>
-<input id="s_name" placeholder="Organization Name">
-<input id="s_types" placeholder="Categories (comma separated, lowercase)">
-<input id="s_location" placeholder="Address">
+<input id="s_name" placeholder="Organization Name" required>
+<input id="s_types" placeholder="Categories (comma separated, lowercase)" required>
+<input id="s_location" placeholder="Full Address (required)" required>
 <input id="s_contact" placeholder="Phone">
-<input id="s_map" placeholder="Google Maps Link">
 <textarea id="s_notes" placeholder="Description"></textarea>
 <button onclick="submitListing()">Submit</button>
 <div id="formSuccess" class="success"></div>
@@ -100,7 +99,6 @@ const name=document.getElementById("s_name").value.trim()
 const types=document.getElementById("s_types").value.split(",").map(t=>t.trim().toLowerCase())
 const location=document.getElementById("s_location").value.trim()
 const contact=document.getElementById("s_contact").value.trim()
-const map_link=document.getElementById("s_map").value.trim()
 const notes=document.getElementById("s_notes").value.trim()
 
 if(!name || !location){
@@ -108,13 +106,13 @@ alert("Name and Address are required.")
 return
 }
 
-const {error}=await supabase.from("listing_submissions").insert([{
+const {error}=await supabase.from("listings_core").insert([{
 name,
 types,
 location,
 contact,
-map_link,
-notes
+notes,
+approved:false
 }])
 
 if(error){
@@ -123,27 +121,28 @@ console.error(error)
 return
 }
 
-document.getElementById("formSuccess").innerText="Submission received. Pending review."
-document.getElementById("submissionForm").reset
+document.getElementById("formSuccess").innerText="Submitted for approval."
+}
+
+async function loadListings(){
+const {data}=await supabase
+.from("listings_core")
+.select("*")
+.eq("approved",true)
+
+listings=data||[]
+renderFilters()
+renderListings()
 }
 
 function extractCoords(link){
 if(!link) return null
 let match = link.match(/@(-?\d+\.\d+),(-?\d+\.\d+)/)
 if(match) return {lat:parseFloat(match[1]),lng:parseFloat(match[2])}
-match = link.match(/q=(-?\d+\.\d+),(-?\d+\.\d+)/)
-if(match) return {lat:parseFloat(match[1]),lng:parseFloat(match[2])}
 return null
 }
 
 function cleanPhone(phone){return (phone||"").replace(/[^0-9]/g,'')}
-
-async function loadListings(){
-const {data}=await supabase.from("listings_core").select("*")
-listings=data||[]
-renderFilters()
-renderListings()
-}
 
 function renderFilters(){
 const filterBox=document.getElementById("filters")
@@ -155,17 +154,13 @@ allButton.className="filter active"
 allButton.innerText="All"
 allButton.onclick=()=>{activeFilter=null;renderListings();updateActive(allButton)}
 filterBox.appendChild(allButton)
-function createButton(type){
+allTypes.forEach(type=>{
 const btn=document.createElement("div")
 btn.className="filter"
 btn.innerText=type
 btn.onclick=()=>{activeFilter=type;renderListings();updateActive(btn)}
 filterBox.appendChild(btn)
-}
-preferredOrder.forEach(type=>{
-if(allTypes.has(type)){createButton(type);allTypes.delete(type)}
 })
-allTypes.forEach(type=>createButton(type))
 }
 
 function updateActive(btn){
@@ -177,24 +172,31 @@ function renderListings(){
 const container=document.getElementById("listings")
 container.innerHTML=""
 markerGroup.clearLayers()
+
 let filtered=listings
+
 if(activeFilter){
-filtered=filtered.filter(l=>l.types && l.types.map(t=>t.toLowerCase()).includes(activeFilter))
+filtered=filtered.filter(l=>l.types && l.types.includes(activeFilter))
 }
+
 if(searchTerm){
 filtered=filtered.filter(l=>{
 const text=(l.name||"")+(l.location||"")+(l.notes||"")
 return text.toLowerCase().includes(searchTerm.toLowerCase())
 })
 }
+
 filtered.forEach(l=>{
+
 const coords=extractCoords(l.map_link)
+
 if(coords){
-L.marker([coords.lat,coords.lng]).addTo(markerGroup).bindPopup(`<b>${l.name}</b>`)
+L.marker([coords.lat,coords.lng]).addTo(markerGroup)
 }
+
 const phoneClean=cleanPhone(l.contact)
-const email="givinghopedubois@gmail.com"
 const subject=encodeURIComponent("Removal Request – "+l.name)
+
 const card=document.createElement("div")
 card.className="card"
 card.innerHTML=`
@@ -207,17 +209,20 @@ card.innerHTML=`
 <a class="btn directions" target="_blank"
 href="https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(l.location)}">
 Directions</a>
-<a class="btn remove" href="mailto:${email}?subject=${subject}">
+<a class="btn remove" href="mailto:givinghopedubois@gmail.com?subject=${subject}">
 Request Removal</a>
 </div>`
 container.appendChild(card)
+
 })
-if(markerGroup.getLayers().length>0){
-map.fitBounds(markerGroup.getBounds(),{padding:[40,40]})
-}
+
 }
 
-document.getElementById("searchBox").addEventListener("input",e=>{searchTerm=e.target.value;renderListings()})
+document.getElementById("searchBox").addEventListener("input",e=>{
+searchTerm=e.target.value
+renderListings()
+})
+
 document.getElementById("locateBtn").addEventListener("click",()=>{
 if(!navigator.geolocation){alert("Geolocation not supported");return}
 navigator.geolocation.getCurrentPosition(position=>{
@@ -225,7 +230,7 @@ const lat=position.coords.latitude
 const lng=position.coords.longitude
 map.setView([lat,lng],14)
 if(userMarker){map.removeLayer(userMarker)}
-userMarker=L.marker([lat,lng]).addTo(map).bindPopup("You are here").openPopup()
+userMarker=L.marker([lat,lng]).addTo(map)
 })
 })
 
