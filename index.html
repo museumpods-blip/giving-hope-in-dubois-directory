@@ -113,6 +113,7 @@ color:white;
 
 .call{background:#28a745;}
 .directions{background:#444;}
+
 </style>
 
 </head>
@@ -153,6 +154,7 @@ const supabase=createClient(supabaseUrl,supabaseKey)
 let listings=[]
 let activeFilter=null
 let searchTerm=""
+let userMarker=null
 
 const preferredOrder=[
 "food",
@@ -179,7 +181,6 @@ function extractCoords(link){
 if(!link) return null
 
 let match = link.match(/@(-?\d+\.\d+),(-?\d+\.\d+)/)
-
 if(match){
 return{
 lat:parseFloat(match[1]),
@@ -188,7 +189,6 @@ lng:parseFloat(match[2])
 }
 
 match = link.match(/q=(-?\d+\.\d+),(-?\d+\.\d+)/)
-
 if(match){
 return{
 lat:parseFloat(match[1]),
@@ -265,7 +265,7 @@ allTypes.delete(type)
 }
 })
 
-// Then any additional categories dynamically
+// Then dynamic categories
 allTypes.forEach(type=>{
 createButton(type)
 })
@@ -359,11 +359,18 @@ const lng=position.coords.longitude
 
 map.setView([lat,lng],14)
 
-L.marker([lat,lng])
+// Remove previous marker
+if(userMarker){
+map.removeLayer(userMarker)
+}
+
+userMarker=L.marker([lat,lng])
 .addTo(map)
 .bindPopup("You are here")
 .openPopup()
 
+},()=>{
+alert("Location access denied or unavailable.")
 })
 
 })
