@@ -5,7 +5,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-<title>Giving Hope in DuBois</title>
+<title>JustOffI80 – DuBois Exit Guide</title>
 
 <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css"/>
 
@@ -99,6 +99,7 @@ margin-bottom:8px;
 .buttons{
 display:flex;
 gap:10px;
+margin-top:8px;
 }
 
 .btn{
@@ -120,7 +121,7 @@ color:white;
 <body>
 
 <header>
-Giving Hope in DuBois
+JustOffI80 – DuBois Exit Guide
 </header>
 
 <div class="container">
@@ -178,7 +179,18 @@ function extractCoords(link){
 
 if(!link) return null
 
-const match=link.match(/q=(-?\d+\.\d+),(-?\d+\.\d+)/)
+// Support @lat,lng format
+let match = link.match(/@(-?\d+\.\d+),(-?\d+\.\d+)/)
+
+if(match){
+return{
+lat:parseFloat(match[1]),
+lng:parseFloat(match[2])
+}
+}
+
+// Support q=lat,lng format
+match = link.match(/q=(-?\d+\.\d+),(-?\d+\.\d+)/)
 
 if(match){
 return{
@@ -261,13 +273,10 @@ filterBox.appendChild(btn)
 }
 
 function updateActive(btn){
-
 document.querySelectorAll(".filter").forEach(f=>{
 f.classList.remove("active")
 })
-
 btn.classList.add("active")
-
 }
 
 function renderListings(){
@@ -275,7 +284,6 @@ function renderListings(){
 const container=document.getElementById("listings")
 
 container.innerHTML=""
-
 markerGroup.clearLayers()
 
 let filtered=listings
@@ -296,11 +304,9 @@ filtered.forEach(l=>{
 const coords=extractCoords(l.map_link)
 
 if(coords){
-
-const marker=L.marker([coords.lat,coords.lng])
+L.marker([coords.lat,coords.lng])
 .addTo(markerGroup)
 .bindPopup(`<b>${l.name}</b>`)
-
 }
 
 const phoneClean=cleanPhone(l.contact)
