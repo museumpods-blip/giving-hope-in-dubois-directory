@@ -5,120 +5,99 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-<title>JustOffI80</title>
+<title>Meet Scout – JustOffI80</title>
 
 <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css"/>
 
 <style>
-body{
-  font-family:Arial,sans-serif;
-  margin:0;
-  background:#f4f4f4;
+body {
+  font-family: Arial, sans-serif;
+  margin: 0;
+  background: #f4f4f4;
 }
 
-header{
-  background:#2b5cff;
-  color:white;
-  padding:18px;
-  text-align:center;
-  font-size:22px;
-  font-weight:bold;
+header {
+  background: #2b5cff;
+  color: white;
+  padding: 18px;
+  text-align: center;
+  font-size: 22px;
+  font-weight: bold;
 }
 
-.container{
-  max-width:900px;
-  margin:auto;
-  padding:16px;
+.container {
+  max-width: 900px;
+  margin: auto;
+  padding: 16px;
 }
 
-.search input{
-  width:100%;
-  padding:12px;
-  font-size:16px;
-  border-radius:8px;
-  border:1px solid #ccc;
-  margin-bottom:12px;
+.search input {
+  width: 100%;
+  padding: 12px;
+  font-size: 16px;
+  border-radius: 8px;
+  border: 1px solid #ccc;
+  margin-bottom: 14px;
 }
 
-.filters{
-  display:flex;
-  flex-wrap:wrap;
-  gap:8px;
-  margin-bottom:14px;
+#map {
+  height: 320px;
+  border-radius: 10px;
+  margin-bottom: 20px;
 }
 
-.filter{
-  background:white;
-  border:1px solid #ddd;
-  padding:8px 14px;
-  border-radius:20px;
-  cursor:pointer;
-  font-size:14px;
+.card {
+  background: white;
+  border-radius: 10px;
+  padding: 16px;
+  margin-bottom: 12px;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.08);
 }
 
-.filter.active{
-  background:#2b5cff;
-  color:white;
+.name {
+  font-size: 18px;
+  font-weight: bold;
 }
 
-.locate-btn{
-  background:#2b5cff;
-  color:white;
-  border:none;
-  padding:10px 14px;
-  border-radius:6px;
-  cursor:pointer;
-  margin-bottom:10px;
+.address {
+  color: #555;
+  margin-bottom: 8px;
 }
 
-#map{
-  height:320px;
-  border-radius:10px;
-  margin-bottom:20px;
+.buttons {
+  display: flex;
+  gap: 10px;
+  margin-top: 10px;
 }
 
-.card{
-  background:white;
-  border-radius:10px;
-  padding:16px;
-  margin-bottom:12px;
-  box-shadow:0 2px 6px rgba(0,0,0,0.08);
+.btn {
+  flex: 1;
+  padding: 10px;
+  border-radius: 6px;
+  text-align: center;
+  text-decoration: none;
+  color: white;
 }
 
-.name{
-  font-size:18px;
-  font-weight:bold;
-}
+.call { background: #28a745; }
+.directions { background: #444; }
 
-.address{
-  color:#555;
-  margin-bottom:8px;
+.locate-btn {
+  background: #2b5cff;
+  color: white;
+  border: none;
+  padding: 10px 14px;
+  border-radius: 6px;
+  cursor: pointer;
+  margin-bottom: 14px;
 }
-
-.buttons{
-  display:flex;
-  gap:10px;
-  margin-top:10px;
-}
-
-.btn{
-  flex:1;
-  padding:10px;
-  border-radius:6px;
-  text-align:center;
-  text-decoration:none;
-  color:white;
-}
-
-.call{background:#28a745;}
-.directions{background:#444;}
 </style>
 
 </head>
 <body>
 
 <header>
-JustOffI80
+Meet Scout – JustOffI80
 </header>
 
 <div class="container">
@@ -127,12 +106,9 @@ JustOffI80
 <input id="searchBox" type="text" placeholder="Search places...">
 </div>
 
-<div id="filters" class="filters"></div>
-
 <button id="locateBtn" class="locate-btn">📍 Locate Me</button>
 
 <div id="map"></div>
-
 <div id="listings"></div>
 
 </div>
@@ -143,195 +119,139 @@ JustOffI80
 
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2"
 
-const supabaseUrl="https://jvnmqvdgnywtgjcyagiu.supabase.co"
-const supabaseKey="PASTE_YOUR_PUBLISHABLE_KEY_HERE"
+const supabaseUrl = "https://jvnmqvdgnywtgjcyagiu.supabase.co"
+const supabaseKey = "SUPABASE_KEY_HERE"
 
-const supabase=createClient(supabaseUrl,supabaseKey)
+const supabase = createClient(supabaseUrl, supabaseKey)
 
-let listings=[]
-let activeFilter=null
-let searchTerm=""
+let listings = []
+let searchTerm = ""
 
-const map=L.map('map').setView([41.12,-78.76],12)
+const map = L.map('map').setView([41.12, -78.76], 12)
 
-L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{
-  attribution:'© OpenStreetMap'
+L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+  attribution: '© OpenStreetMap'
 }).addTo(map)
 
-let markerGroup=L.featureGroup().addTo(map)
-let userMarker=null
+let markerGroup = L.featureGroup().addTo(map)
+let userMarker = null
 
-function extractCoords(link){
-  if(!link) return null
-  const match=link.match(/@(-?\d+\.\d+),(-?\d+\.\d+)/)
-  if(match){
-    return{
-      lat:parseFloat(match[1]),
-      lng:parseFloat(match[2])
+function extractCoords(link) {
+  if (!link) return null
+
+  // Works with full Google Maps links containing @lat,lng
+  const match = link.match(/@(-?\d+\.\d+),(-?\d+\.\d+)/)
+  if (match) {
+    return {
+      lat: parseFloat(match[1]),
+      lng: parseFloat(match[2])
     }
   }
   return null
 }
 
-function cleanPhone(phone){
-  return (phone||"").replace(/[^0-9]/g,'')
+function cleanPhone(phone) {
+  return (phone || "").replace(/[^0-9]/g, '')
 }
 
-async function loadListings(){
+async function loadListings() {
 
-  const {data,error}=await supabase
-  .from("listings_core")
-  .select("*")
-  .eq("approved",true)
+  const { data, error } = await supabase
+    .from("listings_core")
+    .select("*")
+    .eq("approved", true)
 
-  if(error){
+  if (error) {
     console.error(error)
     return
   }
 
-  listings=data
-  renderFilters()
+  listings = data
   renderListings()
 }
 
-function renderFilters(){
+function renderListings() {
 
-  const filterBox=document.getElementById("filters")
-  const allTypes=new Set()
-
-  listings.forEach(l=>{
-    if(l.types){
-      l.types.forEach(t=>allTypes.add(t))
-    }
-  })
-
-  filterBox.innerHTML=""
-
-  const allBtn=document.createElement("div")
-  allBtn.className="filter active"
-  allBtn.innerText="All"
-  allBtn.onclick=()=>{
-    activeFilter=null
-    updateActive(allBtn)
-    renderListings()
-  }
-
-  filterBox.appendChild(allBtn)
-
-  allTypes.forEach(type=>{
-    const btn=document.createElement("div")
-    btn.className="filter"
-    btn.innerText=type
-    btn.onclick=()=>{
-      activeFilter=type
-      updateActive(btn)
-      renderListings()
-    }
-    filterBox.appendChild(btn)
-  })
-}
-
-function updateActive(btn){
-  document.querySelectorAll(".filter").forEach(f=>f.classList.remove("active"))
-  btn.classList.add("active")
-}
-
-function renderListings(){
-
-  const container=document.getElementById("listings")
-  container.innerHTML=""
+  const container = document.getElementById("listings")
+  container.innerHTML = ""
   markerGroup.clearLayers()
 
-  let filtered=listings
+  let filtered = listings
 
-  if(activeFilter){
-    filtered=filtered.filter(l=>l.types && l.types.includes(activeFilter))
-  }
-
-  if(searchTerm){
-    filtered=filtered.filter(l=>{
-      const text=(l.name||"")+(l.location||"")+(l.notes||"")
+  if (searchTerm) {
+    filtered = filtered.filter(l => {
+      const text = (l.name || "") + (l.location || "") + (l.notes || "")
       return text.toLowerCase().includes(searchTerm.toLowerCase())
     })
   }
 
-  filtered.forEach(l=>{
+  filtered.forEach(l => {
 
-    const coords=extractCoords(l.map_link)
+    const coords = extractCoords(l.map_link)
 
-    if(coords){
-
-      const phoneClean=cleanPhone(l.contact)
-
-      const popupContent=`
-        <div style="font-size:14px;max-width:220px;">
-          <div style="font-weight:bold;margin-bottom:4px;">${l.name||""}</div>
-          <div style="margin-bottom:6px;">${l.location||""}</div>
-          <div style="margin-bottom:6px;color:#555;">${l.notes||""}</div>
-          <div style="display:flex;gap:6px;margin-top:8px;">
-            <a href="tel:${phoneClean}" style="flex:1;background:#28a745;color:white;text-align:center;padding:6px;border-radius:4px;text-decoration:none;">Call</a>
-            <a target="_blank" href="https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(l.location)}" style="flex:1;background:#444;color:white;text-align:center;padding:6px;border-radius:4px;text-decoration:none;">Directions</a>
-          </div>
-        </div>
-      `
-
-      L.marker([coords.lat,coords.lng])
-      .addTo(markerGroup)
-      .bindPopup(popupContent)
+    if (coords) {
+      L.marker([coords.lat, coords.lng])
+        .addTo(markerGroup)
+        .bindPopup(`<b>${l.name}</b>`)
     }
 
-    const phoneClean=cleanPhone(l.contact)
+    const phoneClean = cleanPhone(l.contact)
 
-    const card=document.createElement("div")
-    card.className="card"
+    const card = document.createElement("div")
+    card.className = "card"
 
-    card.innerHTML=`
-      <div class="name">${l.name||""}</div>
-      <div class="address">${l.location||""}</div>
-      <div>${l.notes||""}</div>
+    card.innerHTML = `
+      <div class="name">${l.name || ""}</div>
+      <div class="address">${l.location || ""}</div>
+      <div>${l.notes || ""}</div>
+
       <div class="buttons">
         <a class="btn call" href="tel:${phoneClean}">Call</a>
         <a class="btn directions" target="_blank"
-        href="https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(l.location)}">Directions</a>
+          href="https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(l.location)}">
+          Directions
+        </a>
       </div>
     `
 
     container.appendChild(card)
   })
 
-  if(markerGroup.getLayers().length>0){
-    map.fitBounds(markerGroup.getBounds(),{padding:[40,40]})
+  if (markerGroup.getLayers().length > 0) {
+    map.fitBounds(markerGroup.getBounds(), { padding: [40, 40] })
   }
 }
 
-document.getElementById("searchBox").addEventListener("input",e=>{
-  searchTerm=e.target.value
+document.getElementById("searchBox").addEventListener("input", e => {
+  searchTerm = e.target.value
   renderListings()
 })
 
-document.getElementById("locateBtn").addEventListener("click",()=>{
-  if(!navigator.geolocation){
-    alert("Geolocation not supported")
+document.getElementById("locateBtn").addEventListener("click", () => {
+
+  if (!navigator.geolocation) {
+    alert("Geolocation not supported.")
     return
   }
 
-  navigator.geolocation.getCurrentPosition(position=>{
-    const lat=position.coords.latitude
-    const lng=position.coords.longitude
+  navigator.geolocation.getCurrentPosition(position => {
 
-    if(userMarker){
+    const lat = position.coords.latitude
+    const lng = position.coords.longitude
+
+    if (userMarker) {
       map.removeLayer(userMarker)
     }
 
-    userMarker=L.marker([lat,lng])
-    .addTo(map)
-    .bindPopup("<b>You are here</b>")
-    .openPopup()
+    userMarker = L.marker([lat, lng])
+      .addTo(map)
+      .bindPopup("<b>You are here</b>")
+      .openPopup()
 
-    map.setView([lat,lng],14)
+    map.setView([lat, lng], 14)
 
-  },()=>{
-    alert("Location access denied or unavailable")
+  }, () => {
+    alert("Location access denied or unavailable.")
   })
 })
 
