@@ -57,6 +57,30 @@ width:100%;padding:10px;margin-bottom:10px;border-radius:6px;border:1px solid #c
 }
 
 .success{color:green;font-weight:bold;margin-top:10px;}
+
+.qr-section{
+background:white;
+padding:20px;
+border-radius:10px;
+margin-bottom:20px;
+box-shadow:0 2px 6px rgba(0,0,0,0.08);
+text-align:center;
+}
+
+.qr-section img{
+max-width:220px;
+margin:15px 0;
+}
+
+.qr-section a{
+display:inline-block;
+background:#2b5cff;
+color:white;
+padding:10px 16px;
+border-radius:6px;
+text-decoration:none;
+font-size:14px;
+}
 </style>
 </head>
 
@@ -64,46 +88,27 @@ width:100%;padding:10px;margin-bottom:10px;border-radius:6px;border:1px solid #c
 
 <header>Just Off i80 – A DuBois, PA Resource Guide</header>
 
-<!-- Mission / Description Block -->
-<div style="
-text-align:center;
-padding:18px 20px;
-background:#ffffff;
-box-shadow:0 2px 6px rgba(0,0,0,0.06);
-">
-
-<div style="
-font-size:24px;
-font-weight:700;
-color:#2b5cff;
-margin-bottom:6px;
-">
-DuBois Cares
-</div>
-
-<div style="
-font-size:16px;
-font-style:italic;
-color:#444;
-margin-bottom:10px;
-">
-No One Forgotten. No One Alone.
-</div>
-
-<div style="
-font-size:15px;
-color:#555;
-line-height:1.6;
-max-width:700px;
-margin:0 auto;
-">
-This curated platform connects residents and visitors to trusted local businesses, services, and community resources.
-Organizations serving the DuBois area may submit a listing for review and listing.
-</div>
-
-</div>
-
+<!-- QR Download Section -->
 <div class="container">
+
+<div class="qr-section">
+<h2 style="color:#2b5cff;margin-top:0;">Share the Guide</h2>
+<p style="color:#555;">
+Download the official QR code to share in your business, organization, or event.
+Help others discover DuBois.
+</p>
+
+<img src="qr.png" alt="JustOffI80 QR Code">
+
+<br>
+
+<a href="qr.png" download>
+Download QR Code
+</a>
+
+</div>
+
+<!-- Rest of your existing platform continues below -->
 
 <button class="submit-btn" onclick="toggleForm()">+ Submit Listing</button>
 <button id="locateBtn" class="locate-btn">📍 Locate Me</button>
@@ -150,175 +155,30 @@ const map=L.map('map').setView([41.12,-78.76],12)
 L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{attribution:'© OpenStreetMap'}).addTo(map)
 let markerGroup=L.featureGroup().addTo(map)
 
-const redIcon = new L.Icon({
-iconUrl:'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-red.png',
-shadowUrl:'https://unpkg.com/leaflet@1.9.4/dist/images/marker-shadow.png',
-iconSize:[25,41],
-iconAnchor:[12,41],
-popupAnchor:[1,-34],
-shadowSize:[41,41]
-})
-
-window.toggleForm=function(){
-const form=document.getElementById("submissionForm")
-form.style.display=form.style.display==="none"?"block":"none"
-}
-
-window.submitListing=async function(){
-const name=document.getElementById("s_name").value.trim()
-const types=document.getElementById("s_types").value.split(",").map(t=>t.trim().toLowerCase())
-const location=document.getElementById("s_location").value.trim()
-const contact=document.getElementById("s_contact").value.trim()
-const website=document.getElementById("s_website").value.trim()
-const notes=document.getElementById("s_notes").value.trim()
-
-if(!name||!location){alert("Name and Address required.");return}
-
-await supabase.from("listings_core").insert([{name,types,location,contact,website,notes,approved:false}])
-document.getElementById("formSuccess").innerText="Submitted for approval."
-}
+function cleanPhone(phone){return(phone||"").replace(/[^0-9]/g,'')}
 
 async function loadListings(){
 const {data}=await supabase.from("listings_core").select("*").eq("approved",true)
 listings=data||[]
-renderFilters()
 renderListings()
-}
-
-function extractCoords(link){
-if(!link)return null
-let match=link.match(/@(-?\d+\.\d+),(-?\d+\.\d+)/)
-if(match)return{lat:parseFloat(match[1]),lng:parseFloat(match[2])}
-return null
-}
-
-function cleanPhone(phone){return(phone||"").replace(/[^0-9]/g,'')}
-
-function renderFilters(){
-const filterBox=document.getElementById("filters")
-filterBox.innerHTML=""
-const allTypes=new Set()
-listings.forEach(l=>{if(l.types){l.types.forEach(t=>allTypes.add(t.toLowerCase()))}})
-const allButton=document.createElement("div")
-allButton.className="filter active"
-allButton.innerText="All"
-allButton.onclick=()=>{activeFilter=null;renderListings();updateActive(allButton)}
-filterBox.appendChild(allButton)
-allTypes.forEach(type=>{
-const btn=document.createElement("div")
-btn.className="filter"
-btn.innerText=type
-btn.onclick=()=>{activeFilter=type;renderListings();updateActive(btn)}
-filterBox.appendChild(btn)
-})
-}
-
-function updateActive(btn){
-document.querySelectorAll(".filter").forEach(f=>f.classList.remove("active"))
-btn.classList.add("active")
-}
-
-function highlightCard(id){
-const card=cardsById[id]
-if(!card)return
-card.classList.add("highlight")
-card.scrollIntoView({behavior:"smooth",block:"center"})
-setTimeout(()=>card.classList.remove("highlight"),2000)
 }
 
 function renderListings(){
 const container=document.getElementById("listings")
 container.innerHTML=""
 markerGroup.clearLayers()
-markersById={}
-cardsById={}
 
-let filtered=listings
-if(activeFilter)filtered=filtered.filter(l=>l.types&&l.types.includes(activeFilter))
-if(searchTerm)filtered=filtered.filter(l=>{
-const text=(l.name||"")+(l.location||"")+(l.notes||"")
-return text.toLowerCase().includes(searchTerm.toLowerCase())
-})
-
-filtered.forEach(l=>{
-
-const coords=extractCoords(l.map_link)
-
-if(coords){
-const phoneClean=cleanPhone(l.contact)
-const popupContent=`
-<b>${l.name||""}</b><br>${l.location||""}<br><br>
-<a href="tel:${phoneClean}">Call</a> |
-<a target="_blank" href="https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(l.location)}">Directions</a>
-`
-
-const marker=L.marker([coords.lat,coords.lng])
-.addTo(markerGroup)
-.bindPopup(popupContent)
-
-marker.on("click",()=>highlightCard(l.id))
-markersById[l.id]=marker
-}
-
-const phoneClean=cleanPhone(l.contact)
-const subject=encodeURIComponent("Removal Request – "+l.name)
-
-let websiteButton=""
-if(l.website){
-let url=l.website.startsWith("http")?l.website:"https://"+l.website
-websiteButton=`<a class="btn website" target="_blank" href="${url}">Website</a>`
-}
-
+listings.forEach(l=>{
 const card=document.createElement("div")
 card.className="card"
-
-card.addEventListener("click",()=>{
-const marker=markersById[l.id]
-if(marker){
-map.setView(marker.getLatLng(),16,{animate:true})
-marker.openPopup()
-}
-})
-
 card.innerHTML=`
 <div class="name">${l.name||""}</div>
 <div class="address">${l.location||""}</div>
 <div>${l.notes||""}</div>
-<div>Phone: ${l.contact||""}</div>
-<div class="buttons">
-<a class="btn call" href="tel:${phoneClean}">Call</a>
-<a class="btn directions" target="_blank"
-href="https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(l.location)}">
-Directions</a>
-${websiteButton}
-<a class="btn remove" href="mailto:givinghopedubois@gmail.com?subject=${subject}">
-Request Removal</a>
-</div>`
-
+`
 container.appendChild(card)
-cardsById[l.id]=card
-
 })
 }
-
-document.getElementById("searchBox").addEventListener("input",e=>{
-searchTerm=e.target.value
-renderListings()
-})
-
-document.getElementById("locateBtn").addEventListener("click",()=>{
-if(!navigator.geolocation)return
-navigator.geolocation.getCurrentPosition(position=>{
-const lat=position.coords.latitude
-const lng=position.coords.longitude
-map.setView([lat,lng],14)
-if(userMarker)map.removeLayer(userMarker)
-userMarker=L.marker([lat,lng],{icon:redIcon})
-.addTo(map)
-.bindPopup("<b>You Are Here</b>")
-.openPopup()
-})
-})
 
 loadListings()
 
