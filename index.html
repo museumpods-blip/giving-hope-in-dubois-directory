@@ -138,8 +138,6 @@ let userMarker = null
 
 function extractCoords(link) {
   if (!link) return null
-
-  // Works with full Google Maps links containing @lat,lng
   const match = link.match(/@(-?\d+\.\d+),(-?\d+\.\d+)/)
   if (match) {
     return {
@@ -190,9 +188,41 @@ function renderListings() {
     const coords = extractCoords(l.map_link)
 
     if (coords) {
+
+      const phoneClean = cleanPhone(l.contact)
+
+      const popupContent = `
+        <div style="font-size:14px; max-width:220px;">
+          <div style="font-weight:bold; margin-bottom:4px;">
+            ${l.name || ""}
+          </div>
+
+          <div style="margin-bottom:6px;">
+            ${l.location || ""}
+          </div>
+
+          <div style="margin-bottom:6px; color:#555;">
+            ${l.notes || ""}
+          </div>
+
+          <div style="display:flex; gap:6px; margin-top:8px;">
+            <a href="tel:${phoneClean}" 
+               style="flex:1; background:#28a745; color:white; text-align:center; padding:6px; border-radius:4px; text-decoration:none;">
+               Call
+            </a>
+
+            <a target="_blank"
+               href="https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(l.location)}"
+               style="flex:1; background:#444; color:white; text-align:center; padding:6px; border-radius:4px; text-decoration:none;">
+               Directions
+            </a>
+          </div>
+        </div>
+      `
+
       L.marker([coords.lat, coords.lng])
         .addTo(markerGroup)
-        .bindPopup(`<b>${l.name}</b>`)
+        .bindPopup(popupContent)
     }
 
     const phoneClean = cleanPhone(l.contact)
