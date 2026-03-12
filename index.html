@@ -64,6 +64,45 @@ width:100%;padding:10px;margin-bottom:10px;border-radius:6px;border:1px solid #c
 
 <header>Just Off i80 – A DuBois, PA Resource Guide</header>
 
+<!-- Mission / Description Block -->
+<div style="
+text-align:center;
+padding:18px 20px;
+background:#ffffff;
+box-shadow:0 2px 6px rgba(0,0,0,0.06);
+">
+
+<div style="
+font-size:24px;
+font-weight:700;
+color:#2b5cff;
+margin-bottom:6px;
+">
+DuBois Cares
+</div>
+
+<div style="
+font-size:16px;
+font-style:italic;
+color:#444;
+margin-bottom:10px;
+">
+No One Forgotten. No One Alone.
+</div>
+
+<div style="
+font-size:15px;
+color:#555;
+line-height:1.6;
+max-width:700px;
+margin:0 auto;
+">
+This curated platform connects residents and visitors to trusted local businesses, services, and community resources.
+Organizations serving the DuBois area may submit a listing for review.
+</div>
+
+</div>
+
 <div class="container">
 
 <button class="submit-btn" onclick="toggleForm()">+ Submit Listing</button>
@@ -218,7 +257,6 @@ const marker=L.marker([coords.lat,coords.lng])
 .bindPopup(popupContent)
 
 marker.on("click",()=>highlightCard(l.id))
-
 markersById[l.id]=marker
 }
 
