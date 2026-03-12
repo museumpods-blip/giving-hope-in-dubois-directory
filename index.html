@@ -25,7 +25,14 @@ border-radius:6px;cursor:pointer;margin-bottom:10px;margin-right:6px;
 
 #map{height:320px;border-radius:10px;margin-bottom:20px;}
 
-.card{background:white;border-radius:10px;padding:16px;margin-bottom:12px;box-shadow:0 2px 6px rgba(0,0,0,0.08);}
+.card{
+background:white;border-radius:10px;padding:16px;margin-bottom:12px;
+box-shadow:0 2px 6px rgba(0,0,0,0.08);
+cursor:pointer;
+transition:0.2s;
+}
+.card:hover{box-shadow:0 4px 10px rgba(0,0,0,0.15);}
+
 .name{font-size:18px;font-weight:bold;}
 .address{color:#555;margin-bottom:8px;}
 
@@ -90,6 +97,7 @@ const supabaseKey="sb_publishable_EC399fKXbwpp4pnZfxocLA__yRyugBm"
 const supabase=createClient(supabaseUrl,supabaseKey)
 
 let listings=[]
+let markersById={}
 let activeFilter=null
 let searchTerm=""
 let userMarker=null
@@ -122,10 +130,7 @@ const notes=document.getElementById("s_notes").value.trim()
 
 if(!name||!location){alert("Name and Address required.");return}
 
-await supabase.from("listings_core").insert([{
-name,types,location,contact,website,notes,approved:false
-}])
-
+await supabase.from("listings_core").insert([{name,types,location,contact,website,notes,approved:false}])
 document.getElementById("formSuccess").innerText="Submitted for approval."
 }
 
@@ -173,6 +178,7 @@ function renderListings(){
 const container=document.getElementById("listings")
 container.innerHTML=""
 markerGroup.clearLayers()
+markersById={}
 
 let filtered=listings
 if(activeFilter)filtered=filtered.filter(l=>l.types&&l.types.includes(activeFilter))
@@ -186,43 +192,18 @@ filtered.forEach(l=>{
 const coords=extractCoords(l.map_link)
 
 if(coords){
-
 const phoneClean=cleanPhone(l.contact)
-
-let websiteButton=""
-if(l.website){
-let url=l.website.startsWith("http")?l.website:"https://"+l.website
-websiteButton=`
-<a href="${url}" target="_blank"
-style="flex:1;background:#0069d9;color:white;text-align:center;padding:6px;border-radius:4px;text-decoration:none;font-size:12px;">
-Website
-</a>`
-}
-
 const popupContent=`
-<div style="font-size:13px;max-width:220px;">
-<div style="font-weight:bold;margin-bottom:4px;">${l.name||""}</div>
-<div style="margin-bottom:6px;">${l.location||""}</div>
-<div style="display:flex;gap:6px;margin-top:8px;">
-<a href="tel:${phoneClean}"
-style="flex:1;background:#28a745;color:white;text-align:center;padding:6px;border-radius:4px;text-decoration:none;font-size:12px;">
-Call
-</a>
-<a target="_blank"
-href="https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(l.location)}"
-style="flex:1;background:#444;color:white;text-align:center;padding:6px;border-radius:4px;text-decoration:none;font-size:12px;">
-Directions
-</a>
-</div>
-<div style="display:flex;gap:6px;margin-top:6px;">
-${websiteButton}
-</div>
-</div>
+<b>${l.name||""}</b><br>${l.location||""}<br><br>
+<a href="tel:${phoneClean}">Call</a> |
+<a target="_blank" href="https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(l.location)}">Directions</a>
 `
 
-L.marker([coords.lat,coords.lng])
+const marker=L.marker([coords.lat,coords.lng])
 .addTo(markerGroup)
 .bindPopup(popupContent)
+
+markersById[l.id]=marker
 }
 
 const phoneClean=cleanPhone(l.contact)
@@ -236,6 +217,15 @@ websiteButton=`<a class="btn website" target="_blank" href="${url}">Website</a>`
 
 const card=document.createElement("div")
 card.className="card"
+
+card.addEventListener("click",()=>{
+const marker=markersById[l.id]
+if(marker){
+map.setView(marker.getLatLng(),16,{animate:true})
+marker.openPopup()
+}
+})
+
 card.innerHTML=`
 <div class="name">${l.name||""}</div>
 <div class="address">${l.location||""}</div>
@@ -250,6 +240,7 @@ ${websiteButton}
 <a class="btn remove" href="mailto:givinghopedubois@gmail.com?subject=${subject}">
 Request Removal</a>
 </div>`
+
 container.appendChild(card)
 
 })
