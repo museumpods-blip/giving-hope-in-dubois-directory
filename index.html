@@ -47,6 +47,16 @@ box-shadow:0 6px 16px rgba(0,0,0,0.2);
 .website{background:#0069d9;}
 .remove{background:#c82333;}
 
+.form-box{
+background:white;padding:16px;border-radius:10px;margin-bottom:20px;
+box-shadow:0 2px 6px rgba(0,0,0,0.08);display:none;
+}
+
+.form-box input,.form-box textarea{
+width:100%;padding:10px;margin-bottom:10px;border-radius:6px;border:1px solid #ccc;
+}
+
+.success{color:green;font-weight:bold;margin-top:10px;}
 </style>
 </head>
 
@@ -56,7 +66,20 @@ box-shadow:0 6px 16px rgba(0,0,0,0.2);
 
 <div class="container">
 
+<button class="submit-btn" onclick="toggleForm()">+ Submit Listing</button>
 <button id="locateBtn" class="locate-btn">📍 Locate Me</button>
+
+<div id="submissionForm" class="form-box">
+<h3>Submit a Listing</h3>
+<input id="s_name" placeholder="Organization Name" required>
+<input id="s_types" placeholder="Categories (comma separated, lowercase)" required>
+<input id="s_location" placeholder="Google Maps Link (required)" required>
+<input id="s_contact" placeholder="Phone">
+<input id="s_website" placeholder="Website (optional)">
+<textarea id="s_notes" placeholder="Description"></textarea>
+<button onclick="submitListing()">Submit</button>
+<div id="formSuccess" class="success"></div>
+</div>
 
 <div class="search">
 <input id="searchBox" type="text" placeholder="Search...">
@@ -97,6 +120,26 @@ popupAnchor:[1,-34],
 shadowSize:[41,41]
 })
 
+window.toggleForm=function(){
+const form=document.getElementById("submissionForm")
+form.style.display=form.style.display==="none"?"block":"none"
+}
+
+window.submitListing=async function(){
+const name=document.getElementById("s_name").value.trim()
+const types=document.getElementById("s_types").value.split(",").map(t=>t.trim().toLowerCase())
+const location=document.getElementById("s_location").value.trim()
+const contact=document.getElementById("s_contact").value.trim()
+const website=document.getElementById("s_website").value.trim()
+const notes=document.getElementById("s_notes").value.trim()
+
+if(!name||!location){alert("Name and Map link required.");return}
+
+await supabase.from("listings_core").insert([{name,types,location,contact,website,notes,approved:false}])
+
+document.getElementById("formSuccess").innerText="Submitted for approval."
+}
+
 async function loadListings(){
 const {data}=await supabase.from("listings_core").select("*").eq("approved",true)
 listings=data||[]
@@ -130,17 +173,14 @@ cardsById={}
 
 listings.forEach(l=>{
 
-const coords=extractCoords(l.map_link)
+const coords=extractCoords(l.location)
 
 if(coords){
-
 const marker=L.marker([coords.lat,coords.lng]).addTo(markerGroup)
 
-marker.on("click",()=>{
-highlightCard(l.id)
-})
+marker.on("click",()=>highlightCard(l.id))
 
-marker.bindPopup(`<b>${l.name}</b><br>${l.location}`)
+marker.bindPopup(`<b>${l.name}</b><br>${l.notes||""}`)
 
 markersById[l.id]=marker
 }
@@ -160,12 +200,11 @@ marker.openPopup()
 
 card.innerHTML=`
 <div class="name">${l.name||""}</div>
-<div class="address">${l.location||""}</div>
-<div>${l.notes||""}</div>
+<div class="address">${l.notes||""}</div>
 <div class="buttons">
 <a class="btn call" href="tel:${phoneClean}">Call</a>
 <a class="btn directions" target="_blank"
-href="https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(l.location)}">
+href="https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(l.name)}">
 Directions</a>
 </div>`
 
@@ -175,6 +214,11 @@ cardsById[l.id]=card
 })
 
 }
+
+document.getElementById("searchBox").addEventListener("input",e=>{
+searchTerm=e.target.value
+renderListings()
+})
 
 document.getElementById("locateBtn").addEventListener("click",()=>{
 if(!navigator.geolocation)return
