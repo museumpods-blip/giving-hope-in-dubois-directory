@@ -19,15 +19,7 @@ background:#2b5cff;color:white;border:none;padding:10px 14px;
 border-radius:6px;cursor:pointer;margin-bottom:10px;margin-right:6px;
 }
 #map{height:320px;border-radius:10px;margin-bottom:20px;}
-.card{
-background:white;border-radius:10px;padding:16px;margin-bottom:12px;
-box-shadow:0 2px 6px rgba(0,0,0,0.08);
-transition: all 0.3s ease;
-}
-.card.highlight{
-border:2px solid #2b5cff;
-box-shadow:0 0 12px rgba(43,92,255,0.4);
-}
+.card{background:white;border-radius:10px;padding:16px;margin-bottom:12px;box-shadow:0 2px 6px rgba(0,0,0,0.08);}
 .name{font-size:18px;font-weight:bold;}
 .address{color:#555;margin-bottom:8px;}
 .buttons{display:flex;gap:8px;margin-top:10px;flex-wrap:wrap;}
@@ -82,7 +74,7 @@ width:100%;padding:10px;margin-bottom:10px;border-radius:6px;border:1px solid #c
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2"
 
 const supabaseUrl="https://jvnmqvdgnywtgjcyagiu.supabase.co"
-const supabaseKey="YOUR_PUBLISHABLE_KEY"
+const supabaseKey="sb_publishable_EC399fKXbwpp4pnZfxocLA__yRyugBm"
 const supabase=createClient(supabaseUrl,supabaseKey)
 
 let listings=[]
@@ -115,13 +107,19 @@ const types=document.getElementById("s_types").value.split(",").map(t=>t.trim().
 const location=document.getElementById("s_location").value.trim()
 const contact=document.getElementById("s_contact").value.trim()
 const notes=document.getElementById("s_notes").value.trim()
-if(!name || !location){alert("Name and Address required.");return}
+
+if(!name || !location){alert("Name and Address are required.");return}
+
 await supabase.from("listings_core").insert([{name,types,location,contact,notes,approved:false}])
 document.getElementById("formSuccess").innerText="Submitted for approval."
 }
 
 async function loadListings(){
-const {data}=await supabase.from("listings_core").select("*").eq("approved",true)
+const {data}=await supabase
+.from("listings_core")
+.select("*")
+.eq("approved",true)
+
 listings=data||[]
 renderFilters()
 renderListings()
@@ -136,8 +134,28 @@ return null
 
 function cleanPhone(phone){return (phone||"").replace(/[^0-9]/g,'')}
 
-function clearHighlights(){
-document.querySelectorAll(".card").forEach(c=>c.classList.remove("highlight"))
+function renderFilters(){
+const filterBox=document.getElementById("filters")
+filterBox.innerHTML=""
+const allTypes=new Set()
+listings.forEach(l=>{if(l.types){l.types.forEach(t=>allTypes.add(t.toLowerCase()))}})
+const allButton=document.createElement("div")
+allButton.className="filter active"
+allButton.innerText="All"
+allButton.onclick=()=>{activeFilter=null;renderListings();updateActive(allButton)}
+filterBox.appendChild(allButton)
+allTypes.forEach(type=>{
+const btn=document.createElement("div")
+btn.className="filter"
+btn.innerText=type
+btn.onclick=()=>{activeFilter=type;renderListings();updateActive(btn)}
+filterBox.appendChild(btn)
+})
+}
+
+function updateActive(btn){
+document.querySelectorAll(".filter").forEach(f=>f.classList.remove("active"))
+btn.classList.add("active")
 }
 
 function renderListings(){
@@ -145,14 +163,49 @@ const container=document.getElementById("listings")
 container.innerHTML=""
 markerGroup.clearLayers()
 
-listings.forEach(l=>{
+let filtered=listings
+
+if(activeFilter){
+filtered=filtered.filter(l=>l.types && l.types.includes(activeFilter))
+}
+
+if(searchTerm){
+filtered=filtered.filter(l=>{
+const text=(l.name||"")+(l.location||"")+(l.notes||"")
+return text.toLowerCase().includes(searchTerm.toLowerCase())
+})
+}
+
+filtered.forEach(l=>{
 
 const coords=extractCoords(l.map_link)
+
+if(coords){
+
 const phoneClean=cleanPhone(l.contact)
+
+const popupContent=`
+<div style="font-size:14px;max-width:220px;">
+<div style="font-weight:bold;margin-bottom:4px;">${l.name||""}</div>
+<div style="margin-bottom:6px;">${l.location||""}</div>
+<div style="margin-bottom:6px;color:#555;">${l.notes||""}</div>
+<div style="display:flex;gap:6px;margin-top:8px;">
+<a href="tel:${phoneClean}" style="flex:1;background:#28a745;color:white;text-align:center;padding:6px;border-radius:4px;text-decoration:none;">Call</a>
+<a target="_blank" href="https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(l.location)}" style="flex:1;background:#444;color:white;text-align:center;padding:6px;border-radius:4px;text-decoration:none;">Directions</a>
+</div>
+</div>
+`
+
+L.marker([coords.lat,coords.lng])
+.addTo(markerGroup)
+.bindPopup(popupContent)
+}
+
+const phoneClean=cleanPhone(l.contact)
+const subject=encodeURIComponent("Removal Request – "+l.name)
+
 const card=document.createElement("div")
 card.className="card"
-card.dataset.id=l.id
-
 card.innerHTML=`
 <div class="name">${l.name||""}</div>
 <div class="address">${l.location||""}</div>
@@ -163,29 +216,18 @@ card.innerHTML=`
 <a class="btn directions" target="_blank"
 href="https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(l.location)}">
 Directions</a>
+<a class="btn remove" href="mailto:givinghopedubois@gmail.com?subject=${subject}">
+Request Removal</a>
 </div>`
-
 container.appendChild(card)
 
-if(coords){
-
-const popupContent=`<b>${l.name||""}</b><br>${l.location||""}`
-
-const marker=L.marker([coords.lat,coords.lng])
-.addTo(markerGroup)
-.bindPopup(popupContent)
-
-marker.on("click",()=>{
-clearHighlights()
-const targetCard=document.querySelector(`.card[data-id='${l.id}']`)
-if(targetCard){
-targetCard.classList.add("highlight")
-}
 })
 }
 
+document.getElementById("searchBox").addEventListener("input",e=>{
+searchTerm=e.target.value
+renderListings()
 })
-}
 
 document.getElementById("locateBtn").addEventListener("click",()=>{
 if(!navigator.geolocation){alert("Geolocation not supported");return}
