@@ -3,8 +3,15 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
 <title>Just Off i80 – A Dubois, PA Community Resource Guide</title>
+
 <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css"/>
+
+<!-- PWA ADDITIONS -->
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#2b5cff">
+<link rel="apple-touch-icon" href="icon-192.png">
 
 <style>
 body{font-family:Arial,sans-serif;margin:0;background:#f4f4f4;}
@@ -181,7 +188,6 @@ filtered.forEach(l=>{
 const coords=extractCoords(l.map_link)
 
 if(coords){
-
 const phoneClean=cleanPhone(l.contact)
 
 const popupContent=`
@@ -244,6 +250,13 @@ userMarker=L.marker([lat,lng],{icon:redIcon})
 })
 
 loadListings()
+
+/* SERVICE WORKER REGISTRATION */
+if ("serviceWorker" in navigator) {
+navigator.serviceWorker.register("sw.js")
+.then(()=>console.log("Service Worker Registered"))
+.catch(err=>console.log("SW registration failed:",err));
+}
 
 </script>
 </body>
