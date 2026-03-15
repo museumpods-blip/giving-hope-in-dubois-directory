@@ -36,6 +36,61 @@ header{background:#2b5cff;color:white;padding:18px;text-align:center;font-size:2
 <button id="locateBtn" class="locate-btn">📍 Locate Me</button>
 
 <div id="submissionForm" class="form-box">
+async function submitListing(){
+
+const name = document.getElementById("s_name").value.trim()
+
+const types = document
+.getElementById("s_types")
+.value
+.split(",")
+.map(t => t.trim().toLowerCase())
+.filter(Boolean)
+
+const location = document.getElementById("s_location").value.trim()
+const contact = document.getElementById("s_contact").value.trim()
+const website = document.getElementById("s_website").value.trim()
+const notes = document.getElementById("s_notes").value.trim()
+
+if(!name || !location){
+alert("Name and Address required")
+return
+}
+
+if(types.length === 0){
+alert("Enter at least one category")
+return
+}
+
+const { data, error } = await supabase
+.from("listings_core")
+.insert([{
+name,
+types,
+location,
+contact,
+website,
+notes,
+approved:false
+}])
+
+console.log("INSERT RESULT:", data, error)
+
+if(error){
+alert("Submission failed — open browser console")
+return
+}
+
+alert("Submitted ✔ Awaiting approval")
+
+document.getElementById("s_name").value=""
+document.getElementById("s_types").value=""
+document.getElementById("s_location").value=""
+document.getElementById("s_contact").value=""
+document.getElementById("s_website").value=""
+document.getElementById("s_notes").value=""
+
+}
 
 <h3>Submit Listing</h3>
 
