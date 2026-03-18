@@ -1,334 +1,496 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>JustOffI80 – Admin</title>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>JustOffI80 Admin</title>
+  <meta name="robots" content="noindex,nofollow" />
+  <style>
+    :root{
+      --bg:#f4f4f4;
+      --card:#ffffff;
+      --text:#222;
+      --muted:#666;
+      --border:#dcdcdc;
+      --blue:#2563eb;
+      --green:#16a34a;
+      --red:#dc2626;
+      --gray:#444;
+    }
 
-<style>
-body{font-family:Arial,sans-serif;margin:0;background:#f4f4f4;}
-header{background:#222;color:white;padding:18px;text-align:center;font-size:22px;font-weight:bold;}
-.container{max-width:1100px;margin:auto;padding:16px;}
-.topbar{display:flex;gap:10px;flex-wrap:wrap;align-items:center;justify-content:space-between;margin-bottom:14px;}
-.count{font-weight:bold;color:#333;}
-.refresh-btn{
-background:#2b5cff;color:white;border:none;padding:10px 14px;border-radius:6px;cursor:pointer;
-}
-.notice{
-margin:12px 0;padding:12px 14px;border-radius:8px;display:none;
-}
-.notice.show{display:block;}
-.notice.success{background:#e9f9ee;color:#166534;border:1px solid #86efac;}
-.notice.error{background:#fef2f2;color:#991b1b;border:1px solid #fca5a5;}
+    *{box-sizing:border-box}
 
-.card{
-background:white;border-radius:10px;padding:16px;margin-bottom:14px;
-box-shadow:0 2px 6px rgba(0,0,0,0.08);
-}
-.card h3{margin:0 0 12px 0;}
-.grid{
-display:grid;
-grid-template-columns:1fr 1fr;
-gap:10px;
-}
-.field{display:flex;flex-direction:column;gap:6px;}
-.field.full{grid-column:1 / -1;}
-label{font-size:13px;color:#555;font-weight:bold;}
-input,textarea{
-width:100%;padding:10px;border-radius:6px;border:1px solid #ccc;font:inherit;
-}
-textarea{min-height:100px;resize:vertical;}
-.actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:14px;}
-.btn{
-border:none;padding:10px 14px;border-radius:6px;cursor:pointer;color:white;font-size:14px;
-}
-.save{background:#2563eb;}
-.approve{background:#16a34a;}
-.delete{background:#dc2626;}
-.empty{
-background:white;border-radius:10px;padding:24px;text-align:center;color:#666;
-box-shadow:0 2px 6px rgba(0,0,0,0.08);
-}
-.meta{font-size:12px;color:#666;margin-top:8px;word-break:break-all;}
-@media (max-width: 700px){
-  .grid{grid-template-columns:1fr;}
-}
-</style>
+    body{
+      margin:0;
+      font-family:Arial,sans-serif;
+      background:var(--bg);
+      color:var(--text);
+    }
+
+    header{
+      background:#222;
+      color:#fff;
+      padding:18px;
+      text-align:center;
+      font-size:22px;
+      font-weight:bold;
+    }
+
+    .container{
+      max-width:1100px;
+      margin:auto;
+      padding:16px;
+    }
+
+    .topbar{
+      display:flex;
+      gap:10px;
+      flex-wrap:wrap;
+      align-items:center;
+      justify-content:space-between;
+      margin-bottom:14px;
+    }
+
+    .count{
+      font-weight:bold;
+      color:#333;
+    }
+
+    .top-actions{
+      display:flex;
+      gap:8px;
+      flex-wrap:wrap;
+    }
+
+    .link-btn,
+    .refresh-btn,
+    .btn{
+      border:none;
+      padding:10px 14px;
+      border-radius:6px;
+      cursor:pointer;
+      color:#fff;
+      font-size:14px;
+      text-decoration:none;
+      display:inline-flex;
+      align-items:center;
+      justify-content:center;
+    }
+
+    .link-btn{background:var(--gray)}
+    .refresh-btn{background:var(--blue)}
+    .save{background:var(--blue)}
+    .approve{background:var(--green)}
+    .delete{background:var(--red)}
+
+    .notice{
+      margin:12px 0;
+      padding:12px 14px;
+      border-radius:8px;
+      display:none;
+      border:1px solid transparent;
+    }
+
+    .notice.show{display:block}
+    .notice.success{
+      background:#e9f9ee;
+      color:#166534;
+      border-color:#86efac;
+    }
+
+    .notice.error{
+      background:#fef2f2;
+      color:#991b1b;
+      border-color:#fca5a5;
+    }
+
+    .card{
+      background:var(--card);
+      border-radius:10px;
+      padding:16px;
+      margin-bottom:14px;
+      box-shadow:0 2px 6px rgba(0,0,0,0.08);
+    }
+
+    .card h3{
+      margin:0 0 12px 0;
+      font-size:20px;
+    }
+
+    .grid{
+      display:grid;
+      grid-template-columns:1fr 1fr;
+      gap:10px;
+    }
+
+    .field{
+      display:flex;
+      flex-direction:column;
+      gap:6px;
+    }
+
+    .field.full{
+      grid-column:1 / -1;
+    }
+
+    label{
+      font-size:13px;
+      color:#555;
+      font-weight:bold;
+    }
+
+    input, textarea{
+      width:100%;
+      padding:10px;
+      border-radius:6px;
+      border:1px solid #ccc;
+      font:inherit;
+    }
+
+    textarea{
+      min-height:100px;
+      resize:vertical;
+    }
+
+    .actions{
+      display:flex;
+      gap:8px;
+      flex-wrap:wrap;
+      margin-top:14px;
+    }
+
+    .meta{
+      font-size:12px;
+      color:var(--muted);
+      margin-top:10px;
+      word-break:break-all;
+      line-height:1.5;
+    }
+
+    .empty{
+      background:#fff;
+      border-radius:10px;
+      padding:24px;
+      text-align:center;
+      color:#666;
+      box-shadow:0 2px 6px rgba(0,0,0,0.08);
+    }
+
+    .btn:disabled,
+    .refresh-btn:disabled{
+      opacity:.65;
+      cursor:not-allowed;
+    }
+
+    @media (max-width: 700px){
+      .grid{
+        grid-template-columns:1fr;
+      }
+    }
+  </style>
 </head>
 <body>
+  <header>JustOffI80 Admin – Pending Submissions</header>
 
-<header>JustOffI80 Admin – Pending Submissions</header>
+  <div class="container">
+    <div class="topbar">
+      <div class="count">Pending listings: <span id="pendingCount">0</span></div>
 
-<div class="container">
-  <div class="topbar">
-    <div class="count">Pending listings: <span id="pendingCount">0</span></div>
-    <div style="display:flex;gap:8px;flex-wrap:wrap;">
-      <a href="./index.html" style="text-decoration:none;background:#444;color:#fff;padding:10px 14px;border-radius:6px;">Public Site</a>
-      <button id="refreshBtn" class="refresh-btn">Refresh</button>
+      <div class="top-actions">
+        <a class="link-btn" href="./index.html">Public Site</a>
+        <button id="refreshBtn" class="refresh-btn" type="button">Refresh</button>
+      </div>
     </div>
+
+    <div id="notice" class="notice"></div>
+    <div id="rows"></div>
   </div>
 
-  <div id="notice" class="notice"></div>
-  <div id="rows"></div>
-</div>
+  <script type="module">
+    import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
-<script type="module">
-import { createClient } from "https://esm.sh/@supabase/supabase-js@2"
+    const supabaseUrl = "https://jvnmqvdgnywtgjcyagiu.supabase.co";
+    const supabaseKey = "sb_publishable_EC399fKXbwpp4pnZfxocLA__yRyugBm";
+    const supabase = createClient(supabaseUrl, supabaseKey);
 
-const supabaseUrl = "https://jvnmqvdgnywtgjcyagiu.supabase.co"
-const supabaseKey = "sb_publishable_EC399fKXbwpp4pnZfxocLA__yRyugBm"
-const supabase = createClient(supabaseUrl, supabaseKey)
+    const rowsEl = document.getElementById("rows");
+    const pendingCountEl = document.getElementById("pendingCount");
+    const noticeEl = document.getElementById("notice");
+    const refreshBtn = document.getElementById("refreshBtn");
 
-const rowsEl = document.getElementById("rows")
-const pendingCountEl = document.getElementById("pendingCount")
-const noticeEl = document.getElementById("notice")
-const refreshBtn = document.getElementById("refreshBtn")
-
-function showNotice(message, type="success"){
-  noticeEl.textContent = message
-  noticeEl.className = `notice show ${type}`
-}
-
-function clearNotice(){
-  noticeEl.textContent = ""
-  noticeEl.className = "notice"
-}
-
-function escapeHtml(value){
-  return String(value ?? "")
-    .replaceAll("&","&amp;")
-    .replaceAll("<","&lt;")
-    .replaceAll(">","&gt;")
-    .replaceAll('"',"&quot;")
-    .replaceAll("'","&#039;")
-}
-
-function normalize(value){
-  return String(value ?? "").trim()
-}
-
-function parseTypes(value){
-  if(Array.isArray(value)){
-    return value.map(v => normalize(v).toLowerCase()).filter(Boolean)
-  }
-
-  const raw = normalize(value)
-  if(!raw) return []
-
-  try{
-    const parsed = JSON.parse(raw)
-    if(Array.isArray(parsed)){
-      return parsed.map(v => normalize(v).toLowerCase()).filter(Boolean)
+    function showNotice(message, type = "success") {
+      noticeEl.textContent = message;
+      noticeEl.className = `notice show ${type}`;
     }
-  }catch(e){
-    // fall back to CSV
-  }
 
-  return raw.split(",").map(v => normalize(v).toLowerCase()).filter(Boolean)
-}
+    function clearNotice() {
+      noticeEl.textContent = "";
+      noticeEl.className = "notice";
+    }
 
-function typesToInput(types){
-  return Array.isArray(types) ? types.join(", ") : ""
-}
+    function escapeHtml(value) {
+      return String(value ?? "")
+        .replaceAll("&", "&amp;")
+        .replaceAll("<", "&lt;")
+        .replaceAll(">", "&gt;")
+        .replaceAll('"', "&quot;")
+        .replaceAll("'", "&#039;");
+    }
 
-function getPayload(card){
-  return {
-    name: normalize(card.querySelector('[data-field="name"]').value),
-    types: parseTypes(card.querySelector('[data-field="types"]').value),
-    location: normalize(card.querySelector('[data-field="location"]').value),
-    contact: normalize(card.querySelector('[data-field="contact"]').value),
-    website: normalize(card.querySelector('[data-field="website"]').value),
-    notes: normalize(card.querySelector('[data-field="notes"]').value),
-    map_link: normalize(card.querySelector('[data-field="map_link"]').value)
-  }
-}
+    function normalize(value) {
+      return String(value ?? "").trim();
+    }
 
-function setBusy(card, busy){
-  card.querySelectorAll("button").forEach(btn => btn.disabled = busy)
-  card.style.opacity = busy ? "0.7" : "1"
-}
-
-function renderCard(row){
-  return `
-    <div class="card" data-id="${escapeHtml(row.id)}">
-      <h3>${escapeHtml(row.name || "(Untitled)")}</h3>
-
-      <div class="grid">
-        <div class="field">
-          <label>Name</label>
-          <input data-field="name" value="${escapeHtml(row.name || "")}">
-        </div>
-
-        <div class="field">
-          <label>Types</label>
-          <input data-field="types" value="${escapeHtml(typesToInput(row.types))}" placeholder="food, gas, lodging">
-        </div>
-
-        <div class="field">
-          <label>Location</label>
-          <input data-field="location" value="${escapeHtml(row.location || "")}">
-        </div>
-
-        <div class="field">
-          <label>Contact</label>
-          <input data-field="contact" value="${escapeHtml(row.contact || "")}">
-        </div>
-
-        <div class="field">
-          <label>Website</label>
-          <input data-field="website" value="${escapeHtml(row.website || "")}">
-        </div>
-
-        <div class="field">
-          <label>Map Link</label>
-          <input data-field="map_link" value="${escapeHtml(row.map_link || "")}" placeholder="Google Maps share link">
-        </div>
-
-        <div class="field full">
-          <label>Notes</label>
-          <textarea data-field="notes">${escapeHtml(row.notes || "")}</textarea>
-        </div>
-      </div>
-
-      <div class="actions">
-        <button class="btn save" data-action="save">Save</button>
-        <button class="btn approve" data-action="approve">Approve</button>
-        <button class="btn delete" data-action="delete">Delete</button>
-      </div>
-
-      <div class="meta">ID: ${escapeHtml(row.id)}</div>
-    </div>
-  `
-}
-
-async function loadPending(){
-  clearNotice()
-  refreshBtn.disabled = true
-  rowsEl.innerHTML = `<div class="empty">Loading pending submissions...</div>`
-
-  const { data, error } = await supabase
-    .from("listings_core")
-    .select("*")
-    .eq("approved", false)
-    .order("name", { ascending: true })
-
-  refreshBtn.disabled = false
-
-  if(error){
-    pendingCountEl.textContent = "0"
-    rowsEl.innerHTML = `<div class="empty">Failed to load pending submissions.</div>`
-    showNotice(error.message, "error")
-    return
-  }
-
-  const rows = data || []
-  pendingCountEl.textContent = String(rows.length)
-
-  if(rows.length === 0){
-    rowsEl.innerHTML = `<div class="empty">No pending submissions.</div>`
-    return
-  }
-
-  rowsEl.innerHTML = rows.map(renderCard).join("")
-  bindActions()
-}
-
-function bindActions(){
-  const cards = rowsEl.querySelectorAll(".card")
-
-  cards.forEach(card => {
-    card.querySelector('[data-action="save"]').addEventListener("click", async () => {
-      clearNotice()
-      const id = card.dataset.id
-      const payload = getPayload(card)
-
-      if(!payload.name || !payload.location){
-        showNotice("Name and Location are required.", "error")
-        return
+    function parseTypes(value) {
+      if (Array.isArray(value)) {
+        return value
+          .map(v => String(v ?? "").trim())
+          .filter(Boolean);
       }
 
-      setBusy(card, true)
+      const raw = String(value ?? "").trim();
+      if (!raw) return [];
 
-      const { error } = await supabase
+      try {
+        const parsed = JSON.parse(raw);
+        if (Array.isArray(parsed)) {
+          return parsed
+            .map(v => String(v ?? "").trim())
+            .filter(Boolean);
+        }
+      } catch (error) {
+        // fall through to comma-separated parsing
+      }
+
+      return raw
+        .split(",")
+        .map(v => v.trim())
+        .filter(Boolean);
+    }
+
+    function typesToInput(types) {
+      if (!Array.isArray(types)) return "";
+      return types.join(", ");
+    }
+
+    function getPayload(card) {
+      return {
+        name: normalize(card.querySelector('[data-field="name"]').value),
+        types: parseTypes(card.querySelector('[data-field="types"]').value),
+        location: normalize(card.querySelector('[data-field="location"]').value),
+        contact: normalize(card.querySelector('[data-field="contact"]').value),
+        website: normalize(card.querySelector('[data-field="website"]').value),
+        notes: normalize(card.querySelector('[data-field="notes"]').value),
+        map_link: normalize(card.querySelector('[data-field="map_link"]').value)
+      };
+    }
+
+    function setBusy(card, busy) {
+      card.querySelectorAll("button").forEach(btn => {
+        btn.disabled = busy;
+      });
+      card.style.opacity = busy ? "0.7" : "1";
+    }
+
+    function renderCard(row) {
+      return `
+        <div class="card" data-id="${escapeHtml(row.id)}">
+          <h3>${escapeHtml(row.name || "(Untitled)")}</h3>
+
+          <div class="grid">
+            <div class="field">
+              <label>Name</label>
+              <input data-field="name" value="${escapeHtml(row.name || "")}">
+            </div>
+
+            <div class="field">
+              <label>Types</label>
+              <input
+                data-field="types"
+                value="${escapeHtml(typesToInput(row.types))}"
+                placeholder='food, gas, lodging'
+              >
+            </div>
+
+            <div class="field">
+              <label>Location</label>
+              <input data-field="location" value="${escapeHtml(row.location || "")}">
+            </div>
+
+            <div class="field">
+              <label>Contact</label>
+              <input data-field="contact" value="${escapeHtml(row.contact || "")}">
+            </div>
+
+            <div class="field">
+              <label>Website</label>
+              <input data-field="website" value="${escapeHtml(row.website || "")}">
+            </div>
+
+            <div class="field">
+              <label>Map Link</label>
+              <input data-field="map_link" value="${escapeHtml(row.map_link || "")}">
+            </div>
+
+            <div class="field full">
+              <label>Notes</label>
+              <textarea data-field="notes">${escapeHtml(row.notes || "")}</textarea>
+            </div>
+          </div>
+
+          <div class="actions">
+            <button class="btn save" data-action="save" type="button">Save</button>
+            <button class="btn approve" data-action="approve" type="button">Approve</button>
+            <button class="btn delete" data-action="delete" type="button">Delete</button>
+          </div>
+
+          <div class="meta">
+            <div><strong>ID:</strong> ${escapeHtml(row.id)}</div>
+            <div><strong>Approved:</strong> ${escapeHtml(String(row.approved))}</div>
+            <div><strong>Lat:</strong> ${escapeHtml(row.lat ?? "")}</div>
+            <div><strong>Lng:</strong> ${escapeHtml(row.lng ?? "")}</div>
+          </div>
+        </div>
+      `;
+    }
+
+    async function loadPending() {
+      clearNotice();
+      refreshBtn.disabled = true;
+      rowsEl.innerHTML = `<div class="empty">Loading pending submissions...</div>`;
+
+      const { data, error } = await supabase
         .from("listings_core")
-        .update({
-          ...payload,
-          approved: false
-        })
-        .eq("id", id)
+        .select("id, name, types, location, contact, website, notes, lat, lng, map_link, approved")
+        .eq("approved", false)
+        .order("name", { ascending: true });
 
-      setBusy(card, false)
+      refreshBtn.disabled = false;
 
-      if(error){
-        showNotice(`Save failed: ${error.message}`, "error")
-        return
+      if (error) {
+        pendingCountEl.textContent = "0";
+        rowsEl.innerHTML = `<div class="empty">Failed to load pending submissions.</div>`;
+        showNotice(`Load failed: ${error.message}`, "error");
+        return;
       }
 
-      showNotice(`Saved "${payload.name}"`)
-      await loadPending()
-    })
+      const rows = data || [];
+      pendingCountEl.textContent = String(rows.length);
 
-    card.querySelector('[data-action="approve"]').addEventListener("click", async () => {
-      clearNotice()
-      const id = card.dataset.id
-      const payload = getPayload(card)
-
-      if(!payload.name || !payload.location){
-        showNotice("Name and Location are required before approval.", "error")
-        return
+      if (rows.length === 0) {
+        rowsEl.innerHTML = `<div class="empty">No pending submissions.</div>`;
+        return;
       }
 
-      setBusy(card, true)
+      rowsEl.innerHTML = rows.map(renderCard).join("");
+      bindActions();
+    }
 
-      const { error } = await supabase
-        .from("listings_core")
-        .update({
-          ...payload,
-          approved: true
-        })
-        .eq("id", id)
+    function bindActions() {
+      const cards = rowsEl.querySelectorAll(".card");
 
-      setBusy(card, false)
+      cards.forEach(card => {
+        const saveBtn = card.querySelector('[data-action="save"]');
+        const approveBtn = card.querySelector('[data-action="approve"]');
+        const deleteBtn = card.querySelector('[data-action="delete"]');
 
-      if(error){
-        showNotice(`Approve failed: ${error.message}`, "error")
-        return
-      }
+        saveBtn.addEventListener("click", async () => {
+          clearNotice();
 
-      showNotice(`Approved "${payload.name}"`)
-      await loadPending()
-    })
+          const id = card.dataset.id;
+          const payload = getPayload(card);
 
-    card.querySelector('[data-action="delete"]').addEventListener("click", async () => {
-      clearNotice()
-      const id = card.dataset.id
-      const name = normalize(card.querySelector('[data-field="name"]').value) || id
+          if (!payload.name || !payload.location) {
+            showNotice("Name and Location are required.", "error");
+            return;
+          }
 
-      if(!window.confirm(`Delete "${name}" permanently?`)) return
+          setBusy(card, true);
 
-      setBusy(card, true)
+          const { error } = await supabase
+            .from("listings_core")
+            .update({
+              ...payload,
+              approved: false
+            })
+            .eq("id", id);
 
-      const { error } = await supabase
-        .from("listings_core")
-        .delete()
-        .eq("id", id)
+          setBusy(card, false);
 
-      setBusy(card, false)
+          if (error) {
+            showNotice(`Save failed: ${error.message}`, "error");
+            return;
+          }
 
-      if(error){
-        showNotice(`Delete failed: ${error.message}`, "error")
-        return
-      }
+          showNotice(`Saved "${payload.name}"`, "success");
+          await loadPending();
+        });
 
-      showNotice(`Deleted "${name}"`)
-      await loadPending()
-    })
-  })
-}
+        approveBtn.addEventListener("click", async () => {
+          clearNotice();
 
-refreshBtn.addEventListener("click", loadPending)
+          const id = card.dataset.id;
+          const payload = getPayload(card);
 
-loadPending()
-</script>
+          if (!payload.name || !payload.location) {
+            showNotice("Name and Location are required before approval.", "error");
+            return;
+          }
+
+          setBusy(card, true);
+
+          const { error } = await supabase
+            .from("listings_core")
+            .update({
+              ...payload,
+              approved: true
+            })
+            .eq("id", id);
+
+          setBusy(card, false);
+
+          if (error) {
+            showNotice(`Approve failed: ${error.message}`, "error");
+            return;
+          }
+
+          showNotice(`Approved "${payload.name}"`, "success");
+          await loadPending();
+        });
+
+        deleteBtn.addEventListener("click", async () => {
+          clearNotice();
+
+          const id = card.dataset.id;
+          const name = normalize(card.querySelector('[data-field="name"]').value) || id;
+
+          if (!window.confirm(`Delete "${name}" permanently?`)) {
+            return;
+          }
+
+          setBusy(card, true);
+
+          const { error } = await supabase
+            .from("listings_core")
+            .delete()
+            .eq("id", id);
+
+          setBusy(card, false);
+
+          if (error) {
+            showNotice(`Delete failed: ${error.message}`, "error");
+            return;
+          }
+
+          showNotice(`Deleted "${name}"`, "success");
+          await loadPending();
+        });
+      });
+    }
+
+    refreshBtn.addEventListener("click", loadPending);
+
+    loadPending();
+  </script>
 </body>
 </html>
