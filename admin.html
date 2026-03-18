@@ -48,6 +48,24 @@
     .meta{font-size:12px;color:var(--muted);margin-top:10px;word-break:break-all;line-height:1.5;}
     .empty{background:#fff;border-radius:10px;padding:24px;text-align:center;color:#666;box-shadow:0 2px 6px rgba(0,0,0,0.08);}
     .btn:disabled,.refresh-btn:disabled{opacity:.65;cursor:not-allowed;}
+    .category-box{
+      border:1px solid #ccc;
+      border-radius:6px;
+      padding:10px;
+      background:#fff;
+    }
+    .category-grid{
+      display:flex;
+      flex-wrap:wrap;
+      gap:8px 12px;
+    }
+    .category-grid label{
+      display:flex;
+      align-items:center;
+      gap:6px;
+      font-size:14px;
+      cursor:pointer;
+    }
     @media (max-width:700px){.grid{grid-template-columns:1fr;}}
   </style>
 </head>
@@ -73,6 +91,27 @@
     const supabaseUrl = "https://jvnmqvdgnywtgjcyagiu.supabase.co";
     const supabaseKey = "sb_publishable_EC399fKXbwpp4pnZfxocLA__yRyugBm";
     const supabase = createClient(supabaseUrl, supabaseKey);
+
+    const CATEGORY_OPTIONS = [
+      "food",
+      "shelter",
+      "clothing",
+      "health",
+      "recovery",
+      "transportation",
+      "church",
+      "employment",
+      "family",
+      "legal",
+      "veterans",
+      "yard sale",
+      "business",
+      "auto",
+      "lodging",
+      "gas",
+      "community",
+      "emergency"
+    ];
 
     const rowsEl = document.getElementById("rows");
     const pendingCountEl = document.getElementById("pendingCount");
@@ -102,9 +141,13 @@
       return String(value ?? "").trim();
     }
 
+    function normalizeCategory(value) {
+      return normalize(value).toLowerCase();
+    }
+
     function parseTypes(value) {
       if (Array.isArray(value)) {
-        return value.map(v => normalize(v)).filter(Boolean);
+        return value.map(v => normalizeCategory(v)).filter(Boolean);
       }
 
       const raw = normalize(value);
@@ -113,21 +156,46 @@
       try {
         const parsed = JSON.parse(raw);
         if (Array.isArray(parsed)) {
-          return parsed.map(v => normalize(v)).filter(Boolean);
+          return parsed.map(v => normalizeCategory(v)).filter(Boolean);
         }
       } catch (error) {}
 
-      return raw.split(",").map(v => v.trim()).filter(Boolean);
+      return raw.split(",").map(v => normalizeCategory(v)).filter(Boolean);
     }
 
-    function typesToInput(types) {
-      return Array.isArray(types) ? types.join(", ") : "";
+    function buildCategoryCheckboxes(rowId, selectedTypes) {
+      const selectedSet = new Set(selectedTypes);
+      return CATEGORY_OPTIONS.map(category => `
+        <label>
+          <input
+            type="checkbox"
+            data-row-id="${escapeHtml(rowId)}"
+            name="admin_types_${escapeHtml(rowId)}"
+            value="${escapeHtml(category)}"
+            ${selectedSet.has(category) ? "checked" : ""}
+          >
+          <span>${escapeHtml(category)}</span>
+        </label>
+      `).join("");
+    }
+
+    function getAdminTypes(card) {
+      const checked = [...card.querySelectorAll('input[type="checkbox"][data-row-id]:checked')]
+        .map(input => normalizeCategory(input.value))
+        .filter(Boolean);
+
+      const extra = normalize(card.querySelector('[data-field="types_extra"]').value);
+      const extraTypes = extra
+        ? extra.split(",").map(v => normalizeCategory(v)).filter(Boolean)
+        : [];
+
+      return [...new Set([...checked, ...extraTypes])];
     }
 
     function getPayload(card) {
       return {
         name: normalize(card.querySelector('[data-field="name"]').value),
-        types: parseTypes(card.querySelector('[data-field="types"]').value),
+        types: getAdminTypes(card),
         town: normalize(card.querySelector('[data-field="town"]').value),
         location: normalize(card.querySelector('[data-field="location"]').value),
         contact: normalize(card.querySelector('[data-field="contact"]').value),
@@ -141,7 +209,25 @@
       card.style.opacity = busy ? "0.7" : "1";
     }
 
+    function splitKnownAndExtraTypes(types) {
+      const known = [];
+      const extra = [];
+
+      types.forEach(type => {
+        if (CATEGORY_OPTIONS.includes(type)) {
+          known.push(type);
+        } else {
+          extra.push(type);
+        }
+      });
+
+      return { known, extra };
+    }
+
     function renderCard(row) {
+      const parsedTypes = parseTypes(row.types);
+      const { known, extra } = splitKnownAndExtraTypes(parsedTypes);
+
       return `
         <div class="card" data-id="${escapeHtml(row.id)}">
           <h3>${escapeHtml(row.name || "(Untitled)")}</h3>
@@ -157,9 +243,22 @@
               <input data-field="town" value="${escapeHtml(row.town || "")}" placeholder="DuBois">
             </div>
 
-            <div class="field">
-              <label>Types</label>
-              <input data-field="types" value="${escapeHtml(typesToInput(row.types))}" placeholder="food, gas, lodging">
+            <div class="field full">
+              <label>Categories</label>
+              <div class="category-box">
+                <div class="category-grid">
+                  ${buildCategoryCheckboxes(row.id, known)}
+                </div>
+              </div>
+            </div>
+
+            <div class="field full">
+              <label>Other Categories (comma separated)</label>
+              <input
+                data-field="types_extra"
+                value="${escapeHtml(extra.join(", "))}"
+                placeholder="add only if truly needed"
+              >
             </div>
 
             <div class="field">
@@ -245,6 +344,11 @@
             return;
           }
 
+          if (payload.types.length === 0) {
+            showNotice("Please select at least one category.", "error");
+            return;
+          }
+
           setBusy(card, true);
 
           const { error } = await supabase
@@ -270,6 +374,11 @@
 
           if (!payload.name || !payload.location) {
             showNotice("Name and Location are required before approval.", "error");
+            return;
+          }
+
+          if (payload.types.length === 0) {
+            showNotice("Please select at least one category before approval.", "error");
             return;
           }
 
