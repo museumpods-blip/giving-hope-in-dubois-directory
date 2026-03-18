@@ -15,10 +15,11 @@
     .filters{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:14px;}
     .filter{background:white;border:1px solid #ddd;padding:8px 14px;border-radius:20px;cursor:pointer;font-size:14px;text-transform:capitalize;}
     .filter.active{background:#2b5cff;color:white;}
-    .locate-btn,.submit-btn{
+    .locate-btn,.submit-btn,.modal-btn{
       background:#2b5cff;color:white;border:none;padding:10px 14px;
       border-radius:6px;cursor:pointer;margin-bottom:10px;margin-right:6px;
     }
+    .modal-btn.secondary{background:#666;}
     #map{height:320px;border-radius:10px;margin-bottom:20px;}
     .card{
       background:white;border-radius:10px;padding:16px;margin-bottom:12px;
@@ -43,12 +44,15 @@
     .call{background:#28a745;}
     .directions{background:#444;}
     .remove{background:#c82333;}
-    .form-box{
+    .form-box,.modal-card{
       background:white;padding:16px;border-radius:10px;margin-bottom:20px;
-      box-shadow:0 2px 6px rgba(0,0,0,0.08);display:none;
+      box-shadow:0 2px 6px rgba(0,0,0,0.08);
     }
-    .form-box input,.form-box textarea{
+    .form-box{display:none;}
+    .form-box input,.form-box textarea,
+    .modal-card input,.modal-card textarea{
       width:100%;padding:10px;margin-bottom:10px;border-radius:6px;border:1px solid #ccc;
+      font:inherit;
     }
     .success{color:green;font-weight:bold;margin-top:10px;}
     .error{color:#b91c1c;font-weight:bold;margin-top:10px;white-space:pre-wrap;}
@@ -93,6 +97,26 @@
       font-weight:bold;
       text-transform:capitalize;
     }
+    .modal-backdrop{
+      position:fixed;
+      inset:0;
+      background:rgba(0,0,0,0.45);
+      display:none;
+      align-items:center;
+      justify-content:center;
+      padding:20px;
+      z-index:9999;
+    }
+    .modal-backdrop.show{display:flex;}
+    .modal-card{
+      width:min(100%, 560px);
+      margin:0;
+      max-height:90vh;
+      overflow:auto;
+    }
+    .modal-title{font-size:20px;font-weight:bold;margin-bottom:10px;}
+    .modal-meta{font-size:14px;color:#555;margin-bottom:10px;line-height:1.5;}
+    .modal-actions{display:flex;gap:8px;flex-wrap:wrap;}
   </style>
 </head>
 <body>
@@ -140,6 +164,25 @@
     <div id="listings"></div>
   </div>
 
+  <div id="removalModal" class="modal-backdrop">
+    <div class="modal-card">
+      <div class="modal-title">Request Removal or Correction</div>
+      <div id="removalMeta" class="modal-meta"></div>
+
+      <input id="r_requester_name" placeholder="Your name" />
+      <input id="r_requester_contact" placeholder="Your email or phone" />
+      <textarea id="r_reason" placeholder="Tell us what should be removed or corrected"></textarea>
+
+      <div id="removalSuccess" class="success"></div>
+      <div id="removalError" class="error"></div>
+
+      <div class="modal-actions">
+        <button id="r_submit" class="modal-btn" type="button">Send Request</button>
+        <button id="r_cancel" class="modal-btn secondary" type="button">Cancel</button>
+      </div>
+    </div>
+  </div>
+
   <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
   <script type="module">
     import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
@@ -169,14 +212,13 @@
       "emergency"
     ];
 
-    const REMOVAL_EMAIL = "i80app@gmail.com";
-
     let listings = [];
     let markersById = {};
     let cardsById = {};
     let activeFilter = null;
     let searchTerm = "";
     let userMarker = null;
+    let activeRemovalListing = null;
 
     const map = L.map("map").setView([41.12, -78.76], 12);
     L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
@@ -258,44 +300,6 @@
       return `https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(address || "")}`;
     }
 
-    function makeRemovalMailto(name, town, location) {
-      const subject = `Removal Request - ${name || "Listing"}`;
-      const bodyLines = [
-        "Hello,",
-        "",
-        "I would like to request a removal or correction for this listing.",
-        "",
-        `Listing name: ${name || ""}`,
-        `Town: ${town || ""}`,
-        `Address: ${location || ""}`,
-        "",
-        "Reason for request:",
-        "",
-        "",
-        "Your name:",
-        "Your contact info:",
-        ""
-      ];
-
-      return `mailto:${REMOVAL_EMAIL}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(bodyLines.join("\n"))}`;
-    }
-
-    function openRemovalEmail(event, name, town, location) {
-      event.preventDefault();
-      event.stopPropagation();
-
-      const href = makeRemovalMailto(name, town, location);
-      window.location.href = href;
-
-      setTimeout(() => {
-        alert(
-          "If your email app did not open, please email " +
-          REMOVAL_EMAIL +
-          " with the listing name and address."
-        );
-      }, 800);
-    }
-
     function extractCoords(link, lat, lng) {
       if (typeof lat === "number" && typeof lng === "number") {
         return { lat, lng };
@@ -321,10 +325,77 @@
     }
 
     function showFormMessage(successText = "", errorText = "") {
-      const successEl = document.getElementById("formSuccess");
-      const errorEl = document.getElementById("formError");
-      successEl.innerText = successText;
-      errorEl.innerText = errorText;
+      document.getElementById("formSuccess").innerText = successText;
+      document.getElementById("formError").innerText = errorText;
+    }
+
+    function showRemovalMessage(successText = "", errorText = "") {
+      document.getElementById("removalSuccess").innerText = successText;
+      document.getElementById("removalError").innerText = errorText;
+    }
+
+    function openRemovalModal(listing) {
+      activeRemovalListing = listing;
+      document.getElementById("removalMeta").innerHTML = `
+        <div><strong>Listing:</strong> ${escapeHtml(listing.name || "")}</div>
+        ${listing.town ? `<div><strong>Town:</strong> ${escapeHtml(listing.town)}</div>` : ""}
+        ${listing.location ? `<div><strong>Address:</strong> ${escapeHtml(listing.location)}</div>` : ""}
+      `;
+      document.getElementById("r_requester_name").value = "";
+      document.getElementById("r_requester_contact").value = "";
+      document.getElementById("r_reason").value = "";
+      showRemovalMessage();
+      document.getElementById("removalModal").classList.add("show");
+    }
+
+    function closeRemovalModal() {
+      activeRemovalListing = null;
+      document.getElementById("removalModal").classList.remove("show");
+    }
+
+    async function submitRemovalRequest() {
+      if (!activeRemovalListing) return;
+
+      const submitBtn = document.getElementById("r_submit");
+      const requester_name = normalize(document.getElementById("r_requester_name").value);
+      const requester_contact = normalize(document.getElementById("r_requester_contact").value);
+      const reason = normalize(document.getElementById("r_reason").value);
+
+      showRemovalMessage();
+
+      if (!reason) {
+        showRemovalMessage("", "Please enter a reason for the removal or correction request.");
+        return;
+      }
+
+      submitBtn.disabled = true;
+      submitBtn.innerText = "Sending...";
+
+      const payload = {
+        listing_id: activeRemovalListing.id || null,
+        listing_name: activeRemovalListing.name || "",
+        town: activeRemovalListing.town || "",
+        location: activeRemovalListing.location || "",
+        requester_name,
+        requester_contact,
+        reason,
+        status: "new"
+      };
+
+      const { error } = await supabase
+        .from("removal_requests")
+        .insert([payload]);
+
+      submitBtn.disabled = false;
+      submitBtn.innerText = "Send Request";
+
+      if (error) {
+        showRemovalMessage("", `Request failed: ${error.message}`);
+        return;
+      }
+
+      showRemovalMessage("Request sent. Thank you.", "");
+      setTimeout(closeRemovalModal, 900);
     }
 
     window.toggleForm = function () {
@@ -538,26 +609,14 @@
           <div class="buttons">
             <a class="btn call" href="tel:${phoneClean}">Call</a>
             <a class="btn directions" target="_blank" rel="noopener noreferrer" href="${directionsUrl}">Directions</a>
-            <button
-              class="btn remove"
-              type="button"
-              data-remove-name="${escapeHtml(l.name || "")}"
-              data-remove-town="${escapeHtml(l.town || "")}"
-              data-remove-location="${escapeHtml(l.location || "")}"
-            >
-              Request Removal
-            </button>
+            <button class="btn remove" type="button">Request Removal</button>
           </div>
         `;
 
-        const removeBtn = card.querySelector(".remove");
-        removeBtn.addEventListener("click", (event) => {
-          openRemovalEmail(
-            event,
-            removeBtn.dataset.removeName,
-            removeBtn.dataset.removeTown,
-            removeBtn.dataset.removeLocation
-          );
+        card.querySelector(".remove").addEventListener("click", (event) => {
+          event.preventDefault();
+          event.stopPropagation();
+          openRemovalModal(l);
         });
 
         container.appendChild(card);
@@ -589,6 +648,12 @@
           .bindPopup("<b>You Are Here</b>")
           .openPopup();
       });
+    });
+
+    document.getElementById("r_submit").addEventListener("click", submitRemovalRequest);
+    document.getElementById("r_cancel").addEventListener("click", closeRemovalModal);
+    document.getElementById("removalModal").addEventListener("click", (event) => {
+      if (event.target.id === "removalModal") closeRemovalModal();
     });
 
     renderSubmitCategoryOptions();
