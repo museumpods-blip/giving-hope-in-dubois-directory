@@ -1,0 +1,162 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Admin – JustOffI80</title>
+
+<style>
+body{font-family:Arial,sans-serif;background:#f4f4f4;margin:0;padding:20px;}
+h1{color:#2b5cff;}
+
+.card{
+background:white;
+padding:16px;
+margin-bottom:15px;
+border-radius:8px;
+box-shadow:0 2px 6px rgba(0,0,0,0.1);
+}
+
+input, textarea{
+width:100%;
+padding:8px;
+margin-bottom:8px;
+border-radius:6px;
+border:1px solid #ccc;
+}
+
+button{
+padding:8px 14px;
+border:none;
+border-radius:6px;
+cursor:pointer;
+margin-right:6px;
+}
+
+.approve{background:#28a745;color:white;}
+.delete{background:#c82333;color:white;}
+.save{background:#2b5cff;color:white;}
+
+.small{font-size:12px;color:#666;margin-bottom:6px;}
+</style>
+</head>
+<body>
+
+<h1>Admin Panel</h1>
+<div id="submissions"></div>
+
+<script type="module">
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2"
+
+const supabaseUrl="https://jvnmqvdgnywtgjcyagiu.supabase.co"
+const supabaseKey="YOUR_PUBLISHABLE_KEY_HERE"
+const supabase=createClient(supabaseUrl,supabaseKey)
+
+async function loadSubmissions(){
+const { data } = await supabase
+.from("listings_core")
+.select("*")
+.eq("approved", false)
+
+render(data || [])
+}
+
+function render(items){
+const container=document.getElementById("submissions")
+container.innerHTML=""
+
+if(items.length===0){
+container.innerHTML="<p>No pending submissions.</p>"
+return
+}
+
+items.forEach(item=>{
+
+const card=document.createElement("div")
+card.className="card"
+
+card.innerHTML=`
+<div class="small">ID: ${item.id}</div>
+
+<label>Name</label>
+<input value="${item.name||""}" id="name-${item.id}">
+
+<label>Categories (comma separated)</label>
+<input value="${(item.types||[]).join(",")}" id="types-${item.id}">
+
+<label>Address</label>
+<input value="${item.location||""}" id="location-${item.id}">
+
+<label>Map Link</label>
+<input value="${item.map_link||""}" id="map-${item.id}">
+
+<label>Phone</label>
+<input value="${item.contact||""}" id="contact-${item.id}">
+
+<label>Website</label>
+<input value="${item.website||""}" id="website-${item.id}">
+
+<label>Description</label>
+<textarea id="notes-${item.id}">${item.notes||""}</textarea>
+
+<button class="save" onclick="saveItem('${item.id}')">Save</button>
+<button class="approve" onclick="approveItem('${item.id}')">Approve</button>
+<button class="delete" onclick="deleteItem('${item.id}')">Delete</button>
+`
+
+container.appendChild(card)
+})
+
+}
+
+window.saveItem=async function(id){
+
+const typesValue=document.getElementById(`types-${id}`).value
+.split(",")
+.map(t=>t.trim().toLowerCase())
+.filter(t=>t.length>0)
+
+await supabase
+.from("listings_core")
+.update({
+name:document.getElementById(`name-${id}`).value,
+types:typesValue,
+location:document.getElementById(`location-${id}`).value,
+map_link:document.getElementById(`map-${id}`).value,
+contact:document.getElementById(`contact-${id}`).value,
+website:document.getElementById(`website-${id}`).value,
+notes:document.getElementById(`notes-${id}`).value
+})
+.eq("id", id)
+
+alert("Saved")
+loadSubmissions()
+}
+
+window.approveItem=async function(id){
+
+await supabase
+.from("listings_core")
+.update({approved:true})
+.eq("id", id)
+
+loadSubmissions()
+}
+
+window.deleteItem=async function(id){
+
+if(!confirm("Delete this submission?")) return
+
+await supabase
+.from("listings_core")
+.delete()
+.eq("id", id)
+
+loadSubmissions()
+}
+
+loadSubmissions()
+</script>
+
+</body>
+</html>
