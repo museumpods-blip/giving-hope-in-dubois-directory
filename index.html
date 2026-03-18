@@ -31,6 +31,7 @@
       box-shadow:0 6px 16px rgba(0,0,0,0.2);
     }
     .name{font-size:18px;font-weight:bold;}
+    .town-row{margin:6px 0 8px 0;font-size:14px;color:#2b5cff;font-weight:bold;}
     .address{color:#555;margin-bottom:8px;}
     .address a{color:#2b5cff;text-decoration:none;}
     .address a:hover{text-decoration:underline;}
@@ -71,6 +72,7 @@
       <h3>Submit a Listing</h3>
       <input id="s_name" placeholder="Organization Name" required />
       <input id="s_types" placeholder="Categories (comma separated)" required />
+      <input id="s_town" placeholder="Town (example: DuBois)" />
       <input id="s_location" placeholder="Full Address (required)" required />
       <input id="s_contact" placeholder="Phone" />
       <input id="s_map_link" placeholder="Google Maps share link (optional, only needed for pin placement if no lat/lng)" />
@@ -199,6 +201,7 @@
 
       const name = normalize(document.getElementById("s_name").value);
       const types = parseTypes(document.getElementById("s_types").value);
+      const town = normalize(document.getElementById("s_town").value);
       const location = normalize(document.getElementById("s_location").value);
       const contact = normalize(document.getElementById("s_contact").value);
       const map_link = normalize(document.getElementById("s_map_link").value);
@@ -214,6 +217,7 @@
       const payload = {
         name,
         types,
+        town,
         location,
         contact,
         notes,
@@ -240,6 +244,7 @@
 
       document.getElementById("s_name").value = "";
       document.getElementById("s_types").value = "";
+      document.getElementById("s_town").value = "";
       document.getElementById("s_location").value = "";
       document.getElementById("s_contact").value = "";
       document.getElementById("s_map_link").value = "";
@@ -249,7 +254,7 @@
     async function loadListings() {
       const { data, error } = await supabase
         .from("listings_core")
-        .select("id, name, types, location, contact, notes, lat, lng, map_link, approved")
+        .select("id, name, types, town, location, contact, notes, lat, lng, map_link, approved")
         .eq("approved", true)
         .order("name", { ascending: true });
 
@@ -329,7 +334,7 @@
 
       if (searchTerm) {
         filtered = filtered.filter(l => {
-          const text = `${l.name || ""} ${l.location || ""} ${l.notes || ""}`.toLowerCase();
+          const text = `${l.name || ""} ${l.town || ""} ${l.location || ""} ${l.notes || ""}`.toLowerCase();
           return text.includes(searchTerm.toLowerCase());
         });
       }
@@ -341,6 +346,7 @@
           const phoneClean = cleanPhone(l.contact);
           const popupContent = `
             <b>${escapeHtml(l.name || "")}</b><br>
+            ${escapeHtml(l.town || "") ? `<div>${escapeHtml(l.town)}</div>` : ""}
             <a target="_blank" href="${makeGoogleMapsSearchUrl(l.location || "")}">${escapeHtml(l.location || "")}</a><br><br>
             <a href="tel:${phoneClean}">Call</a> |
             <a target="_blank" href="${makeGoogleMapsDirectionsUrl(l.location || "")}">Directions</a>
@@ -376,6 +382,7 @@
 
         card.innerHTML = `
           <div class="name">${escapeHtml(l.name || "")}</div>
+          ${l.town ? `<div class="town-row">${escapeHtml(l.town)}</div>` : ""}
           <div class="address">
             <a href="${mapsSearchUrl}" target="_blank" rel="noopener noreferrer">
               ${escapeHtml(l.location || "")}
