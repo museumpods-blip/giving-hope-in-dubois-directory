@@ -128,6 +128,7 @@
       return {
         name: normalize(card.querySelector('[data-field="name"]').value),
         types: parseTypes(card.querySelector('[data-field="types"]').value),
+        town: normalize(card.querySelector('[data-field="town"]').value),
         location: normalize(card.querySelector('[data-field="location"]').value),
         contact: normalize(card.querySelector('[data-field="contact"]').value),
         notes: normalize(card.querySelector('[data-field="notes"]').value),
@@ -149,6 +150,11 @@
             <div class="field">
               <label>Name</label>
               <input data-field="name" value="${escapeHtml(row.name || "")}">
+            </div>
+
+            <div class="field">
+              <label>Town</label>
+              <input data-field="town" value="${escapeHtml(row.town || "")}" placeholder="DuBois">
             </div>
 
             <div class="field">
@@ -200,7 +206,7 @@
 
       const { data, error } = await supabase
         .from("listings_core")
-        .select("id, name, types, location, contact, notes, lat, lng, map_link, approved")
+        .select("id, name, types, town, location, contact, notes, lat, lng, map_link, approved")
         .eq("approved", false)
         .order("name", { ascending: true });
 
