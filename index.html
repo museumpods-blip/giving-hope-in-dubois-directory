@@ -36,7 +36,10 @@
     .address a{color:#2b5cff;text-decoration:none;}
     .address a:hover{text-decoration:underline;}
     .buttons{display:flex;gap:8px;margin-top:10px;flex-wrap:wrap;}
-    .btn{flex:1;padding:10px;border-radius:6px;text-align:center;text-decoration:none;color:white;font-size:14px;}
+    .btn{
+      flex:1;padding:10px;border-radius:6px;text-align:center;text-decoration:none;
+      color:white;font-size:14px;border:none;cursor:pointer;
+    }
     .call{background:#28a745;}
     .directions{background:#444;}
     .remove{background:#c82333;}
@@ -166,6 +169,8 @@
       "emergency"
     ];
 
+    const REMOVAL_EMAIL = "i80app@gmail.com";
+
     let listings = [];
     let markersById = {};
     let cardsById = {};
@@ -251,6 +256,44 @@
 
     function makeGoogleMapsDirectionsUrl(address) {
       return `https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(address || "")}`;
+    }
+
+    function makeRemovalMailto(name, town, location) {
+      const subject = `Removal Request - ${name || "Listing"}`;
+      const bodyLines = [
+        "Hello,",
+        "",
+        "I would like to request a removal or correction for this listing.",
+        "",
+        `Listing name: ${name || ""}`,
+        `Town: ${town || ""}`,
+        `Address: ${location || ""}`,
+        "",
+        "Reason for request:",
+        "",
+        "",
+        "Your name:",
+        "Your contact info:",
+        ""
+      ];
+
+      return `mailto:${REMOVAL_EMAIL}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(bodyLines.join("\n"))}`;
+    }
+
+    function openRemovalEmail(event, name, town, location) {
+      event.preventDefault();
+      event.stopPropagation();
+
+      const href = makeRemovalMailto(name, town, location);
+      window.location.href = href;
+
+      setTimeout(() => {
+        alert(
+          "If your email app did not open, please email " +
+          REMOVAL_EMAIL +
+          " with the listing name and address."
+        );
+      }, 800);
     }
 
     function extractCoords(link, lat, lng) {
@@ -460,7 +503,6 @@
         }
 
         const phoneClean = cleanPhone(l.contact);
-        const subject = encodeURIComponent("Removal Request – " + (l.name || ""));
         const mapsSearchUrl = makeGoogleMapsSearchUrl(l.location || "");
         const directionsUrl = makeGoogleMapsDirectionsUrl(l.location || "");
         const typeBadges = Array.isArray(l.types)
@@ -471,7 +513,7 @@
         card.className = "card";
 
         card.addEventListener("click", (event) => {
-          if (event.target.closest("a")) return;
+          if (event.target.closest("a,button")) return;
 
           const marker = markersById[l.id];
           if (marker) {
@@ -496,9 +538,27 @@
           <div class="buttons">
             <a class="btn call" href="tel:${phoneClean}">Call</a>
             <a class="btn directions" target="_blank" rel="noopener noreferrer" href="${directionsUrl}">Directions</a>
-            <a class="btn remove" href="mailto:i80app@gmail.com?subject=${subject}">Request Removal</a>
+            <button
+              class="btn remove"
+              type="button"
+              data-remove-name="${escapeHtml(l.name || "")}"
+              data-remove-town="${escapeHtml(l.town || "")}"
+              data-remove-location="${escapeHtml(l.location || "")}"
+            >
+              Request Removal
+            </button>
           </div>
         `;
+
+        const removeBtn = card.querySelector(".remove");
+        removeBtn.addEventListener("click", (event) => {
+          openRemovalEmail(
+            event,
+            removeBtn.dataset.removeName,
+            removeBtn.dataset.removeTown,
+            removeBtn.dataset.removeLocation
+          );
+        });
 
         container.appendChild(card);
         cardsById[l.id] = card;
