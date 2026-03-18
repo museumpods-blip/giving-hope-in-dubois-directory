@@ -49,6 +49,47 @@
     }
     .success{color:green;font-weight:bold;margin-top:10px;}
     .error{color:#b91c1c;font-weight:bold;margin-top:10px;white-space:pre-wrap;}
+    .category-box{
+      border:1px solid #ccc;
+      border-radius:6px;
+      padding:10px;
+      background:#fff;
+      margin-bottom:10px;
+    }
+    .category-title{
+      font-size:14px;
+      font-weight:bold;
+      margin-bottom:8px;
+      color:#444;
+    }
+    .category-grid{
+      display:flex;
+      flex-wrap:wrap;
+      gap:8px 12px;
+    }
+    .category-grid label{
+      display:flex;
+      align-items:center;
+      gap:6px;
+      font-size:14px;
+      cursor:pointer;
+    }
+    .type-badges{
+      display:flex;
+      flex-wrap:wrap;
+      gap:6px;
+      margin:8px 0;
+    }
+    .type-badge{
+      background:#eef4ff;
+      color:#2b5cff;
+      border:1px solid #cddcff;
+      border-radius:999px;
+      padding:4px 10px;
+      font-size:12px;
+      font-weight:bold;
+      text-transform:capitalize;
+    }
   </style>
 </head>
 <body>
@@ -71,7 +112,12 @@
     <div id="submissionForm" class="form-box">
       <h3>Submit a Listing</h3>
       <input id="s_name" placeholder="Organization Name" required />
-      <input id="s_types" placeholder="Categories (comma separated)" required />
+
+      <div class="category-box">
+        <div class="category-title">Select Categories</div>
+        <div class="category-grid" id="submitCategoryGrid"></div>
+      </div>
+
       <input id="s_town" placeholder="Town (example: DuBois)" />
       <input id="s_location" placeholder="Full Address (required)" required />
       <input id="s_contact" placeholder="Phone" />
@@ -98,6 +144,27 @@
     const supabaseUrl = "https://jvnmqvdgnywtgjcyagiu.supabase.co";
     const supabaseKey = "sb_publishable_EC399fKXbwpp4pnZfxocLA__yRyugBm";
     const supabase = createClient(supabaseUrl, supabaseKey);
+
+    const CATEGORY_OPTIONS = [
+      "food",
+      "shelter",
+      "clothing",
+      "health",
+      "recovery",
+      "transportation",
+      "church",
+      "employment",
+      "family",
+      "legal",
+      "veterans",
+      "yard sale",
+      "business",
+      "auto",
+      "lodging",
+      "gas",
+      "community",
+      "emergency"
+    ];
 
     let listings = [];
     let markersById = {};
@@ -134,9 +201,13 @@
         .replaceAll("'", "&#039;");
     }
 
+    function normalizeCategory(value) {
+      return normalize(value).toLowerCase();
+    }
+
     function parseTypes(value) {
       if (Array.isArray(value)) {
-        return value.map(v => normalize(v).toLowerCase()).filter(Boolean);
+        return value.map(v => normalizeCategory(v)).filter(Boolean);
       }
 
       const raw = normalize(value);
@@ -145,11 +216,33 @@
       try {
         const parsed = JSON.parse(raw);
         if (Array.isArray(parsed)) {
-          return parsed.map(v => normalize(v).toLowerCase()).filter(Boolean);
+          return parsed.map(v => normalizeCategory(v)).filter(Boolean);
         }
       } catch (error) {}
 
-      return raw.split(",").map(v => v.trim().toLowerCase()).filter(Boolean);
+      return raw.split(",").map(v => normalizeCategory(v)).filter(Boolean);
+    }
+
+    function renderSubmitCategoryOptions() {
+      const box = document.getElementById("submitCategoryGrid");
+      box.innerHTML = CATEGORY_OPTIONS.map(category => `
+        <label>
+          <input type="checkbox" name="submit_types" value="${escapeHtml(category)}">
+          <span>${escapeHtml(category)}</span>
+        </label>
+      `).join("");
+    }
+
+    function getCheckedCategories(name) {
+      return [...document.querySelectorAll(`input[name="${name}"]:checked`)]
+        .map(input => normalizeCategory(input.value))
+        .filter(Boolean);
+    }
+
+    function clearCheckedCategories(name) {
+      document.querySelectorAll(`input[name="${name}"]`).forEach(input => {
+        input.checked = false;
+      });
     }
 
     function makeGoogleMapsSearchUrl(address) {
@@ -200,7 +293,7 @@
       const submitBtn = document.getElementById("submitBtn");
 
       const name = normalize(document.getElementById("s_name").value);
-      const types = parseTypes(document.getElementById("s_types").value);
+      const types = getCheckedCategories("submit_types");
       const town = normalize(document.getElementById("s_town").value);
       const location = normalize(document.getElementById("s_location").value);
       const contact = normalize(document.getElementById("s_contact").value);
@@ -211,6 +304,11 @@
 
       if (!name || !location) {
         showFormMessage("", "Name and Address are required.");
+        return;
+      }
+
+      if (types.length === 0) {
+        showFormMessage("", "Please select at least one category.");
         return;
       }
 
@@ -243,12 +341,12 @@
       showFormMessage("Submitted for approval.", "");
 
       document.getElementById("s_name").value = "";
-      document.getElementById("s_types").value = "";
       document.getElementById("s_town").value = "";
       document.getElementById("s_location").value = "";
       document.getElementById("s_contact").value = "";
       document.getElementById("s_map_link").value = "";
       document.getElementById("s_notes").value = "";
+      clearCheckedCategories("submit_types");
     };
 
     async function loadListings() {
@@ -334,7 +432,8 @@
 
       if (searchTerm) {
         filtered = filtered.filter(l => {
-          const text = `${l.name || ""} ${l.town || ""} ${l.location || ""} ${l.notes || ""}`.toLowerCase();
+          const typeText = Array.isArray(l.types) ? l.types.join(" ") : "";
+          const text = `${l.name || ""} ${l.town || ""} ${l.location || ""} ${l.notes || ""} ${typeText}`.toLowerCase();
           return text.includes(searchTerm.toLowerCase());
         });
       }
@@ -364,6 +463,9 @@
         const subject = encodeURIComponent("Removal Request – " + (l.name || ""));
         const mapsSearchUrl = makeGoogleMapsSearchUrl(l.location || "");
         const directionsUrl = makeGoogleMapsDirectionsUrl(l.location || "");
+        const typeBadges = Array.isArray(l.types)
+          ? l.types.map(type => `<span class="type-badge">${escapeHtml(type)}</span>`).join("")
+          : "";
 
         const card = document.createElement("div");
         card.className = "card";
@@ -383,6 +485,7 @@
         card.innerHTML = `
           <div class="name">${escapeHtml(l.name || "")}</div>
           ${l.town ? `<div class="town-row">${escapeHtml(l.town)}</div>` : ""}
+          ${typeBadges ? `<div class="type-badges">${typeBadges}</div>` : ""}
           <div class="address">
             <a href="${mapsSearchUrl}" target="_blank" rel="noopener noreferrer">
               ${escapeHtml(l.location || "")}
@@ -428,6 +531,7 @@
       });
     });
 
+    renderSubmitCategoryOptions();
     loadListings();
   </script>
 </body>
