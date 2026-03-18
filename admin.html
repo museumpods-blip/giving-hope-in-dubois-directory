@@ -3,160 +3,332 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Admin – JustOffI80</title>
+<title>JustOffI80 – Admin</title>
 
 <style>
-body{font-family:Arial,sans-serif;background:#f4f4f4;margin:0;padding:20px;}
-h1{color:#2b5cff;}
+body{font-family:Arial,sans-serif;margin:0;background:#f4f4f4;}
+header{background:#222;color:white;padding:18px;text-align:center;font-size:22px;font-weight:bold;}
+.container{max-width:1100px;margin:auto;padding:16px;}
+.topbar{display:flex;gap:10px;flex-wrap:wrap;align-items:center;justify-content:space-between;margin-bottom:14px;}
+.count{font-weight:bold;color:#333;}
+.refresh-btn{
+background:#2b5cff;color:white;border:none;padding:10px 14px;border-radius:6px;cursor:pointer;
+}
+.notice{
+margin:12px 0;padding:12px 14px;border-radius:8px;display:none;
+}
+.notice.show{display:block;}
+.notice.success{background:#e9f9ee;color:#166534;border:1px solid #86efac;}
+.notice.error{background:#fef2f2;color:#991b1b;border:1px solid #fca5a5;}
 
 .card{
-background:white;
-padding:16px;
-margin-bottom:15px;
-border-radius:8px;
-box-shadow:0 2px 6px rgba(0,0,0,0.1);
+background:white;border-radius:10px;padding:16px;margin-bottom:14px;
+box-shadow:0 2px 6px rgba(0,0,0,0.08);
 }
-
-input, textarea{
-width:100%;
-padding:8px;
-margin-bottom:8px;
-border-radius:6px;
-border:1px solid #ccc;
+.card h3{margin:0 0 12px 0;}
+.grid{
+display:grid;
+grid-template-columns:1fr 1fr;
+gap:10px;
 }
-
-button{
-padding:8px 14px;
-border:none;
-border-radius:6px;
-cursor:pointer;
-margin-right:6px;
+.field{display:flex;flex-direction:column;gap:6px;}
+.field.full{grid-column:1 / -1;}
+label{font-size:13px;color:#555;font-weight:bold;}
+input,textarea{
+width:100%;padding:10px;border-radius:6px;border:1px solid #ccc;font:inherit;
 }
-
-.approve{background:#28a745;color:white;}
-.delete{background:#c82333;color:white;}
-.save{background:#2b5cff;color:white;}
-
-.small{font-size:12px;color:#666;margin-bottom:6px;}
+textarea{min-height:100px;resize:vertical;}
+.actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:14px;}
+.btn{
+border:none;padding:10px 14px;border-radius:6px;cursor:pointer;color:white;font-size:14px;
+}
+.save{background:#2563eb;}
+.approve{background:#16a34a;}
+.delete{background:#dc2626;}
+.empty{
+background:white;border-radius:10px;padding:24px;text-align:center;color:#666;
+box-shadow:0 2px 6px rgba(0,0,0,0.08);
+}
+.meta{font-size:12px;color:#666;margin-top:8px;word-break:break-all;}
+@media (max-width: 700px){
+  .grid{grid-template-columns:1fr;}
+}
 </style>
 </head>
 <body>
 
-<h1>Admin Panel</h1>
-<div id="submissions"></div>
+<header>JustOffI80 Admin – Pending Submissions</header>
+
+<div class="container">
+  <div class="topbar">
+    <div class="count">Pending listings: <span id="pendingCount">0</span></div>
+    <div style="display:flex;gap:8px;flex-wrap:wrap;">
+      <a href="./index.html" style="text-decoration:none;background:#444;color:#fff;padding:10px 14px;border-radius:6px;">Public Site</a>
+      <button id="refreshBtn" class="refresh-btn">Refresh</button>
+    </div>
+  </div>
+
+  <div id="notice" class="notice"></div>
+  <div id="rows"></div>
+</div>
 
 <script type="module">
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2"
 
-const supabaseUrl="https://jvnmqvdgnywtgjcyagiu.supabase.co"
-const supabaseKey="sb_publishable_EC399fKXbwpp4pnZfxocLA__yRyugBm"
-const supabase=createClient(supabaseUrl,supabaseKey)
+const supabaseUrl = "https://jvnmqvdgnywtgjcyagiu.supabase.co"
+const supabaseKey = "sb_publishable_EC399fKXbwpp4pnZfxocLA__yRyugBm"
+const supabase = createClient(supabaseUrl, supabaseKey)
 
-async function loadSubmissions(){
-const { data } = await supabase
-.from("listings_core")
-.select("*")
-.eq("approved", false)
+const rowsEl = document.getElementById("rows")
+const pendingCountEl = document.getElementById("pendingCount")
+const noticeEl = document.getElementById("notice")
+const refreshBtn = document.getElementById("refreshBtn")
 
-render(data || [])
+function showNotice(message, type="success"){
+  noticeEl.textContent = message
+  noticeEl.className = `notice show ${type}`
 }
 
-function render(items){
-const container=document.getElementById("submissions")
-container.innerHTML=""
-
-if(items.length===0){
-container.innerHTML="<p>No pending submissions.</p>"
-return
+function clearNotice(){
+  noticeEl.textContent = ""
+  noticeEl.className = "notice"
 }
 
-items.forEach(item=>{
-
-const card=document.createElement("div")
-card.className="card"
-
-card.innerHTML=`
-<div class="small">ID: ${item.id}</div>
-
-<label>Name</label>
-<input value="${item.name||""}" id="name-${item.id}">
-
-<label>Categories (comma separated)</label>
-<input value="${(item.types||[]).join(",")}" id="types-${item.id}">
-
-<label>Address</label>
-<input value="${item.location||""}" id="location-${item.id}">
-
-<label>Map Link</label>
-<input value="${item.map_link||""}" id="map-${item.id}">
-
-<label>Phone</label>
-<input value="${item.contact||""}" id="contact-${item.id}">
-
-<label>Website</label>
-<input value="${item.website||""}" id="website-${item.id}">
-
-<label>Description</label>
-<textarea id="notes-${item.id}">${item.notes||""}</textarea>
-
-<button class="save" onclick="saveItem('${item.id}')">Save</button>
-<button class="approve" onclick="approveItem('${item.id}')">Approve</button>
-<button class="delete" onclick="deleteItem('${item.id}')">Delete</button>
-`
-
-container.appendChild(card)
-})
-
+function escapeHtml(value){
+  return String(value ?? "")
+    .replaceAll("&","&amp;")
+    .replaceAll("<","&lt;")
+    .replaceAll(">","&gt;")
+    .replaceAll('"',"&quot;")
+    .replaceAll("'","&#039;")
 }
 
-window.saveItem=async function(id){
-
-const typesValue=document.getElementById(`types-${id}`).value
-.split(",")
-.map(t=>t.trim().toLowerCase())
-.filter(t=>t.length>0)
-
-await supabase
-.from("listings_core")
-.update({
-name:document.getElementById(`name-${id}`).value,
-types:typesValue,
-location:document.getElementById(`location-${id}`).value,
-map_link:document.getElementById(`map-${id}`).value,
-contact:document.getElementById(`contact-${id}`).value,
-website:document.getElementById(`website-${id}`).value,
-notes:document.getElementById(`notes-${id}`).value
-})
-.eq("id", id)
-
-alert("Saved")
-loadSubmissions()
+function normalize(value){
+  return String(value ?? "").trim()
 }
 
-window.approveItem=async function(id){
+function parseTypes(value){
+  if(Array.isArray(value)){
+    return value.map(v => normalize(v).toLowerCase()).filter(Boolean)
+  }
 
-await supabase
-.from("listings_core")
-.update({approved:true})
-.eq("id", id)
+  const raw = normalize(value)
+  if(!raw) return []
 
-loadSubmissions()
+  try{
+    const parsed = JSON.parse(raw)
+    if(Array.isArray(parsed)){
+      return parsed.map(v => normalize(v).toLowerCase()).filter(Boolean)
+    }
+  }catch(e){
+    // fall back to CSV
+  }
+
+  return raw.split(",").map(v => normalize(v).toLowerCase()).filter(Boolean)
 }
 
-window.deleteItem=async function(id){
-
-if(!confirm("Delete this submission?")) return
-
-await supabase
-.from("listings_core")
-.delete()
-.eq("id", id)
-
-loadSubmissions()
+function typesToInput(types){
+  return Array.isArray(types) ? types.join(", ") : ""
 }
 
-loadSubmissions()
+function getPayload(card){
+  return {
+    name: normalize(card.querySelector('[data-field="name"]').value),
+    types: parseTypes(card.querySelector('[data-field="types"]').value),
+    location: normalize(card.querySelector('[data-field="location"]').value),
+    contact: normalize(card.querySelector('[data-field="contact"]').value),
+    website: normalize(card.querySelector('[data-field="website"]').value),
+    notes: normalize(card.querySelector('[data-field="notes"]').value),
+    map_link: normalize(card.querySelector('[data-field="map_link"]').value)
+  }
+}
+
+function setBusy(card, busy){
+  card.querySelectorAll("button").forEach(btn => btn.disabled = busy)
+  card.style.opacity = busy ? "0.7" : "1"
+}
+
+function renderCard(row){
+  return `
+    <div class="card" data-id="${escapeHtml(row.id)}">
+      <h3>${escapeHtml(row.name || "(Untitled)")}</h3>
+
+      <div class="grid">
+        <div class="field">
+          <label>Name</label>
+          <input data-field="name" value="${escapeHtml(row.name || "")}">
+        </div>
+
+        <div class="field">
+          <label>Types</label>
+          <input data-field="types" value="${escapeHtml(typesToInput(row.types))}" placeholder="food, gas, lodging">
+        </div>
+
+        <div class="field">
+          <label>Location</label>
+          <input data-field="location" value="${escapeHtml(row.location || "")}">
+        </div>
+
+        <div class="field">
+          <label>Contact</label>
+          <input data-field="contact" value="${escapeHtml(row.contact || "")}">
+        </div>
+
+        <div class="field">
+          <label>Website</label>
+          <input data-field="website" value="${escapeHtml(row.website || "")}">
+        </div>
+
+        <div class="field">
+          <label>Map Link</label>
+          <input data-field="map_link" value="${escapeHtml(row.map_link || "")}" placeholder="Google Maps share link">
+        </div>
+
+        <div class="field full">
+          <label>Notes</label>
+          <textarea data-field="notes">${escapeHtml(row.notes || "")}</textarea>
+        </div>
+      </div>
+
+      <div class="actions">
+        <button class="btn save" data-action="save">Save</button>
+        <button class="btn approve" data-action="approve">Approve</button>
+        <button class="btn delete" data-action="delete">Delete</button>
+      </div>
+
+      <div class="meta">ID: ${escapeHtml(row.id)}</div>
+    </div>
+  `
+}
+
+async function loadPending(){
+  clearNotice()
+  refreshBtn.disabled = true
+  rowsEl.innerHTML = `<div class="empty">Loading pending submissions...</div>`
+
+  const { data, error } = await supabase
+    .from("listings_core")
+    .select("*")
+    .eq("approved", false)
+    .order("name", { ascending: true })
+
+  refreshBtn.disabled = false
+
+  if(error){
+    pendingCountEl.textContent = "0"
+    rowsEl.innerHTML = `<div class="empty">Failed to load pending submissions.</div>`
+    showNotice(error.message, "error")
+    return
+  }
+
+  const rows = data || []
+  pendingCountEl.textContent = String(rows.length)
+
+  if(rows.length === 0){
+    rowsEl.innerHTML = `<div class="empty">No pending submissions.</div>`
+    return
+  }
+
+  rowsEl.innerHTML = rows.map(renderCard).join("")
+  bindActions()
+}
+
+function bindActions(){
+  const cards = rowsEl.querySelectorAll(".card")
+
+  cards.forEach(card => {
+    card.querySelector('[data-action="save"]').addEventListener("click", async () => {
+      clearNotice()
+      const id = card.dataset.id
+      const payload = getPayload(card)
+
+      if(!payload.name || !payload.location){
+        showNotice("Name and Location are required.", "error")
+        return
+      }
+
+      setBusy(card, true)
+
+      const { error } = await supabase
+        .from("listings_core")
+        .update({
+          ...payload,
+          approved: false
+        })
+        .eq("id", id)
+
+      setBusy(card, false)
+
+      if(error){
+        showNotice(`Save failed: ${error.message}`, "error")
+        return
+      }
+
+      showNotice(`Saved "${payload.name}"`)
+      await loadPending()
+    })
+
+    card.querySelector('[data-action="approve"]').addEventListener("click", async () => {
+      clearNotice()
+      const id = card.dataset.id
+      const payload = getPayload(card)
+
+      if(!payload.name || !payload.location){
+        showNotice("Name and Location are required before approval.", "error")
+        return
+      }
+
+      setBusy(card, true)
+
+      const { error } = await supabase
+        .from("listings_core")
+        .update({
+          ...payload,
+          approved: true
+        })
+        .eq("id", id)
+
+      setBusy(card, false)
+
+      if(error){
+        showNotice(`Approve failed: ${error.message}`, "error")
+        return
+      }
+
+      showNotice(`Approved "${payload.name}"`)
+      await loadPending()
+    })
+
+    card.querySelector('[data-action="delete"]').addEventListener("click", async () => {
+      clearNotice()
+      const id = card.dataset.id
+      const name = normalize(card.querySelector('[data-field="name"]').value) || id
+
+      if(!window.confirm(`Delete "${name}" permanently?`)) return
+
+      setBusy(card, true)
+
+      const { error } = await supabase
+        .from("listings_core")
+        .delete()
+        .eq("id", id)
+
+      setBusy(card, false)
+
+      if(error){
+        showNotice(`Delete failed: ${error.message}`, "error")
+        return
+      }
+
+      showNotice(`Deleted "${name}"`)
+      await loadPending()
+    })
+  })
+}
+
+refreshBtn.addEventListener("click", loadPending)
+
+loadPending()
 </script>
-
 </body>
 </html>
