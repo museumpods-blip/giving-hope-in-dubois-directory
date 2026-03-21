@@ -371,26 +371,28 @@
       submitBtn.disabled = true;
       submitBtn.innerText = "Sending...";
 
-      const payload = {
-        listing_id: activeRemovalListing.id || null,
-        listing_name: activeRemovalListing.name || "",
-        town: activeRemovalListing.town || "",
-        location: activeRemovalListing.location || "",
-        requester_name,
-        requester_contact,
-        reason,
-        status: "new"
-      };
-
-      const { error } = await supabase
-        .from("removal_requests")
-        .insert([payload]);
+      const { data, error } = await supabase.functions.invoke("send-removal-request", {
+        body: {
+          listing_id: activeRemovalListing.id || null,
+          listing_name: activeRemovalListing.name || "",
+          town: activeRemovalListing.town || "",
+          location: activeRemovalListing.location || "",
+          requester_name,
+          requester_contact,
+          reason
+        }
+      });
 
       submitBtn.disabled = false;
       submitBtn.innerText = "Send Request";
 
       if (error) {
         showRemovalMessage("", `Request failed: ${error.message}`);
+        return;
+      }
+
+      if (data?.error) {
+        showRemovalMessage("", `Request failed: ${data.error}`);
         return;
       }
 
