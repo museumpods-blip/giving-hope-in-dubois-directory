@@ -592,8 +592,6 @@
           if (marker) {
             map.setView(marker.getLatLng(), 16, { animate: true });
             marker.openPopup();
-          } else if (l.location) {
-            window.open(mapsSearchUrl, "_blank", "noopener");
           }
         });
 
