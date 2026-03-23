@@ -13,9 +13,31 @@
     .container{max-width:900px;margin:auto;padding:16px;}
     .top-actions{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:10px;}
     .search input{width:100%;padding:12px;font-size:16px;border-radius:8px;border:1px solid #ccc;margin-bottom:12px;}
-    .filters{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:14px;}
-    .filter{background:white;border:1px solid #ddd;padding:8px 14px;border-radius:20px;cursor:pointer;font-size:14px;text-transform:capitalize;}
-    .filter.active{background:#2b5cff;color:white;}
+    .filter-section-title{
+      font-size:12px;
+      font-weight:700;
+      letter-spacing:.06em;
+      text-transform:uppercase;
+      color:#64748b;
+      margin:10px 0 8px;
+    }
+    .filters{
+      display:flex;
+      flex-wrap:wrap;
+      gap:8px;
+      margin-bottom:14px;
+    }
+    .filter{
+      background:white;
+      border:1px solid #ddd;
+      padding:8px 14px;
+      border-radius:20px;
+      cursor:pointer;
+      font-size:14px;
+      text-transform:capitalize;
+      user-select:none;
+    }
+    .filter.active{background:#2b5cff;color:white;border-color:#2b5cff;}
     .locate-btn,.submit-btn,.modal-btn,.embed-btn,.copy-btn,.download-btn,.print-btn,.pdf-btn{
       background:#2b5cff;color:white;border:none;padding:10px 14px;
       border-radius:6px;cursor:pointer;margin-bottom:10px;
@@ -369,7 +391,12 @@
       <input id="searchBox" type="text" placeholder="Search..." />
     </div>
 
+    <div class="filter-section-title">Browse by Town</div>
+    <div id="townFilters" class="filters"></div>
+
+    <div class="filter-section-title">Browse by Category</div>
     <div id="filters" class="filters"></div>
+
     <div id="map"></div>
     <div id="listings"></div>
   </div>
@@ -486,6 +513,7 @@
     let markersById = {};
     let cardsById = {};
     let activeFilter = null;
+    let activeTown = null;
     let searchTerm = "";
     let userMarker = null;
     let activeRemovalListing = null;
@@ -532,6 +560,10 @@
     }
 
     function normalizeCategory(value) {
+      return normalize(value).toLowerCase();
+    }
+
+    function normalizeTown(value) {
       return normalize(value).toLowerCase();
     }
 
@@ -595,12 +627,12 @@
 
       if (!link) return null;
 
-      let match = link.match(/@(-?\d+\.\d+),(-?\d+\.\d+)/);
+      let match = link.match(/@(-?\\d+\\.\\d+),(-?\\d+\\.\\d+)/);
       if (match) {
         return { lat: parseFloat(match[1]), lng: parseFloat(match[2]) };
       }
 
-      match = link.match(/q=(-?\d+\.\d+),(-?\d+\.\d+)/);
+      match = link.match(/q=(-?\\d+\\.\\d+),(-?\\d+\\.\\d+)/);
       if (match) {
         return { lat: parseFloat(match[1]), lng: parseFloat(match[2]) };
       }
@@ -804,7 +836,7 @@
 
     function buildPrintableFlyerDocument(listing, qrDataUrl) {
       const typeBadges = Array.isArray(listing.types)
-        ? listing.types.map(type => `<span class="flyer-type-badge">${escapeHtml(type)}</span>`).join("")
+        ? listing.types.map(type => `<span class="flyer-type-badges">${escapeHtml(type)}</span>`).join("")
         : "";
       const listingLink = makeListingUrl(listing.id);
 
@@ -1183,34 +1215,41 @@
       }
     }
 
-    async function loadListings() {
-      const { data, error } = await supabase
-        .from("listings_core")
-        .select("id, name, types, town, location, contact, notes, lat, lng, map_link, approved")
-        .eq("approved", true)
-        .order("name", { ascending: true });
+    function renderTownFilters() {
+      const filterBox = document.getElementById("townFilters");
+      filterBox.innerHTML = "";
 
-      if (error) {
-        document.getElementById("listings").innerHTML = `<div class="card">Failed to load listings: ${escapeHtml(error.message)}</div>`;
-        return;
-      }
+      const allTowns = new Set();
+      listings.forEach(l => {
+        const town = normalize(l.town);
+        if (town) allTowns.add(town);
+      });
 
-      listings = (data || []).map(row => ({
-        ...row,
-        types: parseTypes(row.types)
-      }));
+      const allButton = document.createElement("div");
+      allButton.className = "filter" + (!activeTown ? " active" : "");
+      allButton.innerText = "All Towns";
+      allButton.onclick = () => {
+        activeTown = null;
+        renderTownFilters();
+        renderListings();
+      };
+      filterBox.appendChild(allButton);
 
-      renderFilters();
-      renderListings();
-
-      const urlParams = new URLSearchParams(window.location.search);
-      const listingId = urlParams.get("listing");
-      if (listingId) {
-        setTimeout(() => openListingById(listingId), 300);
-      }
+      [...allTowns].sort((a, b) => a.localeCompare(b)).forEach(town => {
+        const normalized = normalizeTown(town);
+        const btn = document.createElement("div");
+        btn.className = "filter" + (activeTown === normalized ? " active" : "");
+        btn.innerText = town;
+        btn.onclick = () => {
+          activeTown = normalized;
+          renderTownFilters();
+          renderListings();
+        };
+        filterBox.appendChild(btn);
+      });
     }
 
-    function renderFilters() {
+    function renderCategoryFilters() {
       const filterBox = document.getElementById("filters");
       filterBox.innerHTML = "";
 
@@ -1222,31 +1261,26 @@
       });
 
       const allButton = document.createElement("div");
-      allButton.className = "filter active";
-      allButton.innerText = "All";
+      allButton.className = "filter" + (!activeFilter ? " active" : "");
+      allButton.innerText = "All Categories";
       allButton.onclick = () => {
         activeFilter = null;
+        renderCategoryFilters();
         renderListings();
-        updateActive(allButton);
       };
       filterBox.appendChild(allButton);
 
       [...allTypes].sort().forEach(type => {
         const btn = document.createElement("div");
-        btn.className = "filter";
+        btn.className = "filter" + (activeFilter === type ? " active" : "");
         btn.innerText = type;
         btn.onclick = () => {
           activeFilter = type;
+          renderCategoryFilters();
           renderListings();
-          updateActive(btn);
         };
         filterBox.appendChild(btn);
       });
-    }
-
-    function updateActive(btn) {
-      document.querySelectorAll(".filter").forEach(f => f.classList.remove("active"));
-      btn.classList.add("active");
     }
 
     function highlightCard(id) {
@@ -1257,14 +1291,12 @@
       setTimeout(() => card.classList.remove("highlight"), 2000);
     }
 
-    function renderListings() {
-      const container = document.getElementById("listings");
-      container.innerHTML = "";
-      markerGroup.clearLayers();
-      markersById = {};
-      cardsById = {};
+    function getFilteredListings() {
+      let filtered = [...listings];
 
-      let filtered = listings;
+      if (activeTown) {
+        filtered = filtered.filter(l => normalizeTown(l.town) === activeTown);
+      }
 
       if (activeFilter) {
         filtered = filtered.filter(l => Array.isArray(l.types) && l.types.includes(activeFilter));
@@ -1277,6 +1309,18 @@
           return text.includes(searchTerm.toLowerCase());
         });
       }
+
+      return filtered;
+    }
+
+    function renderListings() {
+      const container = document.getElementById("listings");
+      container.innerHTML = "";
+      markerGroup.clearLayers();
+      markersById = {};
+      cardsById = {};
+
+      const filtered = getFilteredListings();
 
       filtered.forEach(l => {
         const coords = extractCoords(l.map_link, l.lat, l.lng);
@@ -1364,6 +1408,35 @@
 
       if (filtered.length === 0) {
         container.innerHTML = `<div class="card">No listings found.</div>`;
+      }
+    }
+
+    async function loadListings() {
+      const { data, error } = await supabase
+        .from("listings_core")
+        .select("id, name, types, town, location, contact, notes, lat, lng, map_link, approved")
+        .eq("approved", true)
+        .order("name", { ascending: true });
+
+      if (error) {
+        document.getElementById("listings").innerHTML = `<div class="card">Failed to load listings: ${escapeHtml(error.message)}</div>`;
+        return;
+      }
+
+      listings = (data || []).map(row => ({
+        ...row,
+        types: parseTypes(row.types),
+        town: normalize(row.town)
+      }));
+
+      renderTownFilters();
+      renderCategoryFilters();
+      renderListings();
+
+      const urlParams = new URLSearchParams(window.location.search);
+      const listingId = urlParams.get("listing");
+      if (listingId) {
+        setTimeout(() => openListingById(listingId), 300);
       }
     }
 
