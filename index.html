@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>JustOffI80 – A Free Resource Guide Serving Clearfield, Jefferson, and Clarion Counties</title>
+  <title>JustOffI80 – DuBois Exit Guide</title>
 
   <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css"/>
 
@@ -16,13 +16,14 @@
     .filters{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:14px;}
     .filter{background:white;border:1px solid #ddd;padding:8px 14px;border-radius:20px;cursor:pointer;font-size:14px;text-transform:capitalize;}
     .filter.active{background:#2b5cff;color:white;}
-    .locate-btn,.submit-btn,.modal-btn,.embed-btn,.copy-btn{
+    .locate-btn,.submit-btn,.modal-btn,.embed-btn,.copy-btn,.download-btn{
       background:#2b5cff;color:white;border:none;padding:10px 14px;
       border-radius:6px;cursor:pointer;margin-bottom:10px;
     }
     .modal-btn.secondary{background:#666;}
     .embed-btn{background:#0f766e;}
     .copy-btn{background:#2563eb;margin-bottom:0;}
+    .download-btn{background:#7c3aed;margin-bottom:0;}
     #map{height:320px;border-radius:10px;margin-bottom:20px;}
     .card{
       background:white;border-radius:10px;padding:16px;margin-bottom:12px;
@@ -47,6 +48,7 @@
     .call{background:#28a745;}
     .directions{background:#444;}
     .remove{background:#c82333;}
+    .qr{background:#7c3aed;}
     .form-box,.modal-card{
       background:white;padding:16px;border-radius:10px;margin-bottom:20px;
       box-shadow:0 2px 6px rgba(0,0,0,0.08);
@@ -133,17 +135,41 @@
       line-height:1.5;
       margin-bottom:10px;
     }
+    .qr-wrap{
+      display:flex;
+      justify-content:center;
+      align-items:center;
+      background:#fff;
+      border:1px solid #ddd;
+      border-radius:12px;
+      padding:16px;
+      margin:12px 0;
+      min-height:240px;
+    }
+    .qr-wrap img,
+    .qr-wrap canvas{
+      max-width:220px;
+      max-height:220px;
+    }
+    .qr-link-box{
+      width:100%;
+      font-family:Consolas, monospace;
+      font-size:13px;
+      background:#f8fafc;
+      min-height:80px;
+    }
   </style>
 </head>
 <body>
-  <header>Just Off I-80 – A Free Resource Guide Serving Clearfield, Jefferson, and Clarion Counties</header>
+  <header>Just Off i80 – A DuBois, PA Resource Guide</header>
 
   <div style="text-align:center;padding:18px 20px;background:#ffffff;box-shadow:0 2px 6px rgba(0,0,0,0.06);">
     <div style="font-size:16px;font-style:italic;color:#444;margin-bottom:10px;">
+      No One Forgotten. No One Alone.
     </div>
     <div style="font-size:15px;color:#555;line-height:1.6;max-width:700px;margin:0 auto;">
       This curated platform connects residents and visitors to trusted local businesses, services, and community resources.
-      Organizations serving the tri-county area may submit a listing for review and listing.
+      Organizations serving the DuBois area may submit a listing for review and listing.
     </div>
   </div>
 
@@ -219,6 +245,26 @@
     </div>
   </div>
 
+  <div id="qrModal" class="modal-backdrop">
+    <div class="modal-card">
+      <div class="modal-title">Listing QR Code</div>
+      <div id="qrMeta" class="modal-meta"></div>
+
+      <div id="qrCodeMount" class="qr-wrap"></div>
+      <textarea id="qrLinkBox" class="qr-link-box" readonly></textarea>
+
+      <div id="qrSuccess" class="success"></div>
+      <div id="qrError" class="error"></div>
+
+      <div class="modal-actions">
+        <button id="copyQrLinkBtn" class="copy-btn" type="button">Copy Link</button>
+        <button id="downloadQrBtn" class="download-btn" type="button">Download QR</button>
+        <button id="closeQrBtn" class="modal-btn secondary" type="button">Close</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
   <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
   <script type="module">
     import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
@@ -255,6 +301,8 @@
     let searchTerm = "";
     let userMarker = null;
     let activeRemovalListing = null;
+    let activeQrListing = null;
+    let activeQrLink = "";
 
     const EMBED_CODE = `<iframe
   src="https://www.justoffi80.com/index.html"
@@ -346,6 +394,11 @@
       return `https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(address || "")}`;
     }
 
+    function makeListingUrl(id) {
+      const base = `${window.location.origin}${window.location.pathname}`;
+      return `${base}?listing=${encodeURIComponent(id)}`;
+    }
+
     function extractCoords(link, lat, lng) {
       if (typeof lat === "number" && typeof lng === "number") {
         return { lat, lng };
@@ -385,6 +438,11 @@
       document.getElementById("embedCopyError").innerText = errorText;
     }
 
+    function showQrMessage(successText = "", errorText = "") {
+      document.getElementById("qrSuccess").innerText = successText;
+      document.getElementById("qrError").innerText = errorText;
+    }
+
     function openRemovalModal(listing) {
       activeRemovalListing = listing;
       document.getElementById("removalMeta").innerHTML = `
@@ -414,6 +472,39 @@
       document.getElementById("embedModal").classList.remove("show");
     }
 
+    function openQrModal(listing) {
+      activeQrListing = listing;
+      activeQrLink = makeListingUrl(listing.id);
+
+      document.getElementById("qrMeta").innerHTML = `
+        <div><strong>Listing:</strong> ${escapeHtml(listing.name || "")}</div>
+        ${listing.town ? `<div><strong>Town:</strong> ${escapeHtml(listing.town)}</div>` : ""}
+        ${listing.location ? `<div><strong>Address:</strong> ${escapeHtml(listing.location)}</div>` : ""}
+      `;
+
+      const mount = document.getElementById("qrCodeMount");
+      mount.innerHTML = "";
+      document.getElementById("qrLinkBox").value = activeQrLink;
+      showQrMessage();
+
+      new QRCode(mount, {
+        text: activeQrLink,
+        width: 220,
+        height: 220,
+        colorDark: "#111111",
+        colorLight: "#ffffff",
+        correctLevel: QRCode.CorrectLevel.H
+      });
+
+      document.getElementById("qrModal").classList.add("show");
+    }
+
+    function closeQrModal() {
+      activeQrListing = null;
+      activeQrLink = "";
+      document.getElementById("qrModal").classList.remove("show");
+    }
+
     async function copyEmbedCode() {
       const code = document.getElementById("embedCodeBox").value;
       showEmbedMessage();
@@ -432,6 +523,57 @@
           showEmbedMessage("", "Copy failed. Please select and copy the code manually.");
         }
       }
+    }
+
+    async function copyQrLink() {
+      showQrMessage();
+
+      try {
+        await navigator.clipboard.writeText(activeQrLink);
+        showQrMessage("Listing link copied.", "");
+      } catch (error) {
+        const box = document.getElementById("qrLinkBox");
+        box.focus();
+        box.select();
+        try {
+          document.execCommand("copy");
+          showQrMessage("Listing link copied.", "");
+        } catch (fallbackError) {
+          showQrMessage("", "Copy failed. Please copy the link manually.");
+        }
+      }
+    }
+
+    function downloadQrImage() {
+      const mount = document.getElementById("qrCodeMount");
+      const canvas = mount.querySelector("canvas");
+      const img = mount.querySelector("img");
+      let dataUrl = "";
+
+      if (canvas) {
+        dataUrl = canvas.toDataURL("image/png");
+      } else if (img) {
+        dataUrl = img.src;
+      }
+
+      if (!dataUrl) {
+        showQrMessage("", "QR image not ready yet.");
+        return;
+      }
+
+      const safeName = normalize(activeQrListing?.name || "listing")
+        .toLowerCase()
+        .replace(/[^a-z0-9]+/g, "-")
+        .replace(/^-+|-+$/g, "") || "listing";
+
+      const a = document.createElement("a");
+      a.href = dataUrl;
+      a.download = `${safeName}-qr.png`;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+
+      showQrMessage("QR code downloaded.", "");
     }
 
     async function submitRemovalRequest() {
@@ -546,6 +688,25 @@
       clearCheckedCategories("submit_types");
     };
 
+    function openListingById(id) {
+      const listing = listings.find(item => item.id === id);
+      if (!listing) return;
+
+      const marker = markersById[id];
+      const card = cardsById[id];
+
+      if (marker) {
+        map.setView(marker.getLatLng(), 16, { animate: true });
+        marker.openPopup();
+      }
+
+      if (card) {
+        card.classList.add("highlight");
+        card.scrollIntoView({ behavior: "smooth", block: "center" });
+        setTimeout(() => card.classList.remove("highlight"), 2500);
+      }
+    }
+
     async function loadListings() {
       const { data, error } = await supabase
         .from("listings_core")
@@ -565,6 +726,12 @@
 
       renderFilters();
       renderListings();
+
+      const urlParams = new URLSearchParams(window.location.search);
+      const listingId = urlParams.get("listing");
+      if (listingId) {
+        setTimeout(() => openListingById(listingId), 300);
+      }
     }
 
     function renderFilters() {
@@ -690,6 +857,7 @@
           <div class="buttons">
             <a class="btn call" href="tel:${phoneClean}">Call</a>
             <a class="btn directions" target="_blank" rel="noopener noreferrer" href="${directionsUrl}">Directions</a>
+            <button class="btn qr" type="button">QR Code</button>
             <button class="btn remove" type="button">Request Removal</button>
           </div>
         `;
@@ -698,6 +866,12 @@
           event.preventDefault();
           event.stopPropagation();
           openRemovalModal(l);
+        });
+
+        card.querySelector(".qr").addEventListener("click", (event) => {
+          event.preventDefault();
+          event.stopPropagation();
+          openQrModal(l);
         });
 
         container.appendChild(card);
@@ -742,6 +916,13 @@
     document.getElementById("copyEmbedBtn").addEventListener("click", copyEmbedCode);
     document.getElementById("embedModal").addEventListener("click", (event) => {
       if (event.target.id === "embedModal") closeEmbedModal();
+    });
+
+    document.getElementById("copyQrLinkBtn").addEventListener("click", copyQrLink);
+    document.getElementById("downloadQrBtn").addEventListener("click", downloadQrImage);
+    document.getElementById("closeQrBtn").addEventListener("click", closeQrModal);
+    document.getElementById("qrModal").addEventListener("click", (event) => {
+      if (event.target.id === "qrModal") closeQrModal();
     });
 
     renderSubmitCategoryOptions();
