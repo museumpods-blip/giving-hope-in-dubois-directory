@@ -16,7 +16,7 @@
     .filters{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:14px;}
     .filter{background:white;border:1px solid #ddd;padding:8px 14px;border-radius:20px;cursor:pointer;font-size:14px;text-transform:capitalize;}
     .filter.active{background:#2b5cff;color:white;}
-    .locate-btn,.submit-btn,.modal-btn,.embed-btn,.copy-btn,.download-btn,.print-btn{
+    .locate-btn,.submit-btn,.modal-btn,.embed-btn,.copy-btn,.download-btn,.print-btn,.pdf-btn{
       background:#2b5cff;color:white;border:none;padding:10px 14px;
       border-radius:6px;cursor:pointer;margin-bottom:10px;
     }
@@ -25,6 +25,7 @@
     .copy-btn{background:#2563eb;margin-bottom:0;}
     .download-btn{background:#7c3aed;margin-bottom:0;}
     .print-btn{background:#ea580c;margin-bottom:0;}
+    .pdf-btn{background:#0f766e;margin-bottom:0;}
     #map{height:320px;border-radius:10px;margin-bottom:20px;}
     .card{
       background:white;border-radius:10px;padding:16px;margin-bottom:12px;
@@ -423,7 +424,7 @@
     <div class="modal-card flyer-modal-card">
       <div class="modal-title">Listing Flyer</div>
       <div class="flyer-help">
-        This creates a clean printable flyer. Use <strong>Print / Save PDF</strong> to print it or save it as a PDF flyer.
+        Use <strong>Print Flyer</strong> to print it, or <strong>Download PDF</strong> to save a real PDF file directly.
       </div>
 
       <div id="flyerPreview" class="flyer-preview"></div>
@@ -432,13 +433,16 @@
       <div id="flyerError" class="error"></div>
 
       <div class="modal-actions">
-        <button id="printFlyerBtn" class="print-btn" type="button">Print / Save PDF</button>
+        <button id="printFlyerBtn" class="print-btn" type="button">Print Flyer</button>
+        <button id="downloadFlyerPdfBtn" class="pdf-btn" type="button">Download PDF</button>
         <button id="closeFlyerBtn" class="modal-btn secondary" type="button">Close</button>
       </div>
     </div>
   </div>
 
   <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
   <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
   <script type="module">
     import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
@@ -696,7 +700,6 @@
       const typeBadges = Array.isArray(listing.types)
         ? listing.types.map(type => `<span class="flyer-type-badge">${escapeHtml(type)}</span>`).join("")
         : "";
-      const addressLink = makeGoogleMapsSearchUrl(listing.location || "");
       const listingLink = makeListingUrl(listing.id);
 
       return `
@@ -891,7 +894,88 @@
         printWindow.print();
       }, 500);
 
-      showFlyerMessage("Flyer opened. Use Print to print it or Save as PDF.", "");
+      showFlyerMessage("Print window opened.", "");
+    }
+
+    async function downloadFlyerPdf() {
+      if (!activeFlyerListing) {
+        showFlyerMessage("", "No flyer is selected.");
+        return;
+      }
+
+      const flyerSheet = document.getElementById("flyerSheet");
+      if (!flyerSheet) {
+        showFlyerMessage("", "Flyer preview is not ready.");
+        return;
+      }
+
+      showFlyerMessage("Building PDF...", "");
+
+      try {
+        const canvas = await html2canvas(flyerSheet, {
+          scale: 2,
+          backgroundColor: "#ffffff",
+          useCORS: true
+        });
+
+        const imgData = canvas.toDataURL("image/png");
+        const { jsPDF } = window.jspdf;
+        const pdf = new jsPDF("p", "mm", "letter");
+
+        const pageWidth = pdf.internal.pageSize.getWidth();
+        const pageHeight = pdf.internal.pageSize.getHeight();
+        const margin = 10;
+        const usableWidth = pageWidth - margin * 2;
+        const usableHeight = pageHeight - margin * 2;
+
+        const imgWidth = usableWidth;
+        const imgHeight = canvas.height * imgWidth / canvas.width;
+
+        if (imgHeight <= usableHeight) {
+          pdf.addImage(imgData, "PNG", margin, margin, imgWidth, imgHeight);
+        } else {
+          let remainingHeight = imgHeight;
+          let position = 0;
+          const pageCanvas = document.createElement("canvas");
+          const pageCtx = pageCanvas.getContext("2d");
+
+          const pixelsPerMm = canvas.width / imgWidth;
+          const pageSliceHeightPx = Math.floor(usableHeight * pixelsPerMm);
+
+          pageCanvas.width = canvas.width;
+          pageCanvas.height = pageSliceHeightPx;
+
+          while (position < canvas.height) {
+            pageCtx.clearRect(0, 0, pageCanvas.width, pageCanvas.height);
+            pageCtx.fillStyle = "#ffffff";
+            pageCtx.fillRect(0, 0, pageCanvas.width, pageCanvas.height);
+
+            pageCtx.drawImage(
+              canvas,
+              0, position, canvas.width, pageSliceHeightPx,
+              0, 0, canvas.width, pageSliceHeightPx
+            );
+
+            const pageImgData = pageCanvas.toDataURL("image/png");
+            const sliceHeightMm = Math.min(usableHeight, (pageSliceHeightPx / pixelsPerMm));
+
+            pdf.addImage(pageImgData, "PNG", margin, margin, imgWidth, sliceHeightMm);
+
+            position += pageSliceHeightPx;
+            remainingHeight -= usableHeight;
+
+            if (position < canvas.height) {
+              pdf.addPage();
+            }
+          }
+        }
+
+        const safeName = makeSafeFileName(activeFlyerListing.name || "listing");
+        pdf.save(`${safeName}-flyer.pdf`);
+        showFlyerMessage("PDF downloaded.", "");
+      } catch (error) {
+        showFlyerMessage("", "PDF download failed. Please try again.");
+      }
     }
 
     async function copyEmbedCode() {
@@ -1320,6 +1404,7 @@
     });
 
     document.getElementById("printFlyerBtn").addEventListener("click", printFlyer);
+    document.getElementById("downloadFlyerPdfBtn").addEventListener("click", downloadFlyerPdf);
     document.getElementById("closeFlyerBtn").addEventListener("click", closeFlyerModal);
     document.getElementById("flyerModal").addEventListener("click", (event) => {
       if (event.target.id === "flyerModal") closeFlyerModal();
