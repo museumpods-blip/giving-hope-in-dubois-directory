@@ -16,7 +16,7 @@
     .filters{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:14px;}
     .filter{background:white;border:1px solid #ddd;padding:8px 14px;border-radius:20px;cursor:pointer;font-size:14px;text-transform:capitalize;}
     .filter.active{background:#2b5cff;color:white;}
-    .locate-btn,.submit-btn,.modal-btn,.embed-btn,.copy-btn,.download-btn{
+    .locate-btn,.submit-btn,.modal-btn,.embed-btn,.copy-btn,.download-btn,.print-btn,.pdf-btn{
       background:#2b5cff;color:white;border:none;padding:10px 14px;
       border-radius:6px;cursor:pointer;margin-bottom:10px;
     }
@@ -24,6 +24,8 @@
     .embed-btn{background:#0f766e;}
     .copy-btn{background:#2563eb;margin-bottom:0;}
     .download-btn{background:#7c3aed;margin-bottom:0;}
+    .print-btn{background:#ea580c;margin-bottom:0;}
+    .pdf-btn{background:#0f766e;margin-bottom:0;}
     #map{height:320px;border-radius:10px;margin-bottom:20px;}
     .card{
       background:white;border-radius:10px;padding:16px;margin-bottom:12px;
@@ -49,6 +51,7 @@
     .directions{background:#444;}
     .remove{background:#c82333;}
     .qr{background:#7c3aed;}
+    .flyer{background:#ea580c;}
     .form-box,.modal-card{
       background:white;padding:16px;border-radius:10px;margin-bottom:20px;
       box-shadow:0 2px 6px rgba(0,0,0,0.08);
@@ -151,27 +154,176 @@
       max-width:220px;
       max-height:220px;
     }
-    .qr-label{
-      margin-top:12px;
-      text-align:center;
-      font-size:16px;
-      font-weight:700;
-      color:#111827;
-      line-height:1.4;
-    }
-    .qr-sublabel{
-      margin-top:4px;
-      text-align:center;
-      font-size:13px;
-      color:#64748b;
-    }
     .qr-link-box{
       width:100%;
       font-family:Consolas, monospace;
       font-size:13px;
       background:#f8fafc;
       min-height:80px;
-      margin-top:10px;
+    }
+    .flyer-modal-card{
+      width:min(100%, 980px);
+    }
+    .flyer-help{
+      color:#555;
+      font-size:15px;
+      line-height:1.5;
+      margin-bottom:12px;
+    }
+    .flyer-preview{
+      background:#e2e8f0;
+      border:1px solid #cbd5e1;
+      border-radius:16px;
+      padding:18px;
+    }
+    .flyer-sheet{
+      background:#ffffff;
+      border:1px solid #cfd8e3;
+      border-radius:16px;
+      padding:34px;
+      max-width:860px;
+      margin:auto;
+      box-shadow:0 3px 16px rgba(0,0,0,0.08);
+    }
+    .flyer-header{
+      border-bottom:4px solid #2b5cff;
+      padding-bottom:18px;
+      margin-bottom:24px;
+    }
+    .flyer-brand{
+      font-size:14px;
+      font-weight:bold;
+      letter-spacing:.1em;
+      text-transform:uppercase;
+      color:#2b5cff;
+      margin-bottom:8px;
+    }
+    .flyer-name{
+      font-size:42px;
+      font-weight:800;
+      line-height:1.05;
+      color:#111827;
+      margin-bottom:10px;
+    }
+    .flyer-town{
+      font-size:22px;
+      color:#334155;
+      font-weight:700;
+    }
+    .flyer-top{
+      display:grid;
+      grid-template-columns:1fr 270px;
+      gap:30px;
+      align-items:start;
+      margin-bottom:24px;
+    }
+    .flyer-section-title{
+      font-size:13px;
+      text-transform:uppercase;
+      letter-spacing:.08em;
+      color:#64748b;
+      font-weight:700;
+      margin-bottom:10px;
+    }
+    .flyer-description{
+      font-size:19px;
+      line-height:1.7;
+      color:#111827;
+      margin-bottom:22px;
+      white-space:pre-wrap;
+    }
+    .flyer-details{
+      display:grid;
+      gap:14px;
+      margin-bottom:18px;
+    }
+    .flyer-detail{
+      background:#f8fafc;
+      border:1px solid #e2e8f0;
+      border-radius:12px;
+      padding:16px 18px;
+    }
+    .flyer-detail-label{
+      font-size:12px;
+      text-transform:uppercase;
+      letter-spacing:.08em;
+      color:#64748b;
+      font-weight:700;
+      margin-bottom:6px;
+    }
+    .flyer-detail-value{
+      color:#0f172a;
+      font-size:18px;
+      line-height:1.5;
+      word-break:break-word;
+    }
+    .flyer-type-badges{
+      display:flex;
+      flex-wrap:wrap;
+      gap:10px;
+      margin-bottom:8px;
+    }
+    .flyer-type-badge{
+      background:#eff6ff;
+      color:#1d4ed8;
+      border:1px solid #bfdbfe;
+      border-radius:999px;
+      padding:8px 14px;
+      font-size:14px;
+      font-weight:700;
+      text-transform:capitalize;
+    }
+    .flyer-qr-box{
+      text-align:center;
+      background:#ffffff;
+      border:1px solid #dbe3eb;
+      border-radius:16px;
+      padding:20px;
+    }
+    .flyer-qr-box img,
+    .flyer-qr-box canvas{
+      max-width:220px;
+      max-height:220px;
+      margin:auto;
+      display:block;
+    }
+    .flyer-qr-text{
+      margin-top:14px;
+      font-size:16px;
+      color:#334155;
+      font-weight:600;
+      line-height:1.5;
+    }
+    .flyer-footer{
+      border-top:1px solid #dbe3eb;
+      margin-top:24px;
+      padding-top:18px;
+      font-size:15px;
+      color:#475569;
+      display:flex;
+      justify-content:space-between;
+      gap:14px;
+      flex-wrap:wrap;
+    }
+    .flyer-link{
+      color:#2b5cff;
+      font-weight:700;
+      word-break:break-all;
+      font-size:15px;
+    }
+    @media (max-width:700px){
+      .flyer-top{
+        grid-template-columns:1fr;
+      }
+      .flyer-sheet{
+        padding:22px;
+      }
+      .flyer-name{
+        font-size:32px;
+      }
+      .flyer-description{
+        font-size:17px;
+      }
     }
   </style>
 </head>
@@ -265,8 +417,6 @@
       <div id="qrMeta" class="modal-meta"></div>
 
       <div id="qrCodeMount" class="qr-wrap"></div>
-      <div id="qrLabel" class="qr-label"></div>
-      <div class="qr-sublabel">Scan for listing details</div>
       <textarea id="qrLinkBox" class="qr-link-box" readonly></textarea>
 
       <div id="qrSuccess" class="success"></div>
@@ -280,7 +430,29 @@
     </div>
   </div>
 
+  <div id="flyerModal" class="modal-backdrop">
+    <div class="modal-card flyer-modal-card">
+      <div class="modal-title">Listing Flyer</div>
+      <div class="flyer-help">
+        Use <strong>Print Flyer</strong> to print it, or <strong>Download PDF</strong> to save a real PDF file directly.
+      </div>
+
+      <div id="flyerPreview" class="flyer-preview"></div>
+
+      <div id="flyerSuccess" class="success"></div>
+      <div id="flyerError" class="error"></div>
+
+      <div class="modal-actions">
+        <button id="printFlyerBtn" class="print-btn" type="button">Print Flyer</button>
+        <button id="downloadFlyerPdfBtn" class="pdf-btn" type="button">Download PDF</button>
+        <button id="closeFlyerBtn" class="modal-btn secondary" type="button">Close</button>
+      </div>
+    </div>
+  </div>
+
   <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
   <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
   <script type="module">
     import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
@@ -319,6 +491,7 @@
     let activeRemovalListing = null;
     let activeQrListing = null;
     let activeQrLink = "";
+    let activeFlyerListing = null;
 
     const EMBED_CODE = `<iframe
   src="https://www.justoffi80.com/index.html"
@@ -439,6 +612,13 @@
       return (phone || "").replace(/[^0-9]/g, "");
     }
 
+    function makeSafeFileName(value) {
+      return normalize(value || "listing")
+        .toLowerCase()
+        .replace(/[^a-z0-9]+/g, "-")
+        .replace(/^-+|-+$/g, "") || "listing";
+    }
+
     function showFormMessage(successText = "", errorText = "") {
       document.getElementById("formSuccess").innerText = successText;
       document.getElementById("formError").innerText = errorText;
@@ -457,6 +637,11 @@
     function showQrMessage(successText = "", errorText = "") {
       document.getElementById("qrSuccess").innerText = successText;
       document.getElementById("qrError").innerText = errorText;
+    }
+
+    function showFlyerMessage(successText = "", errorText = "") {
+      document.getElementById("flyerSuccess").innerText = successText;
+      document.getElementById("flyerError").innerText = errorText;
     }
 
     function openRemovalModal(listing) {
@@ -500,8 +685,6 @@
 
       const mount = document.getElementById("qrCodeMount");
       mount.innerHTML = "";
-      document.getElementById("qrLabel").innerText =
-        listing.town ? `${listing.name} — ${listing.town}` : `${listing.name}`;
       document.getElementById("qrLinkBox").value = activeQrLink;
       showQrMessage();
 
@@ -521,6 +704,284 @@
       activeQrListing = null;
       activeQrLink = "";
       document.getElementById("qrModal").classList.remove("show");
+    }
+
+    function buildFlyerPreviewHtml(listing) {
+      const typeBadges = Array.isArray(listing.types)
+        ? listing.types.map(type => `<span class="flyer-type-badge">${escapeHtml(type)}</span>`).join("")
+        : "";
+      const listingLink = makeListingUrl(listing.id);
+
+      return `
+        <div class="flyer-sheet" id="flyerSheet">
+          <div class="flyer-header">
+            <div class="flyer-brand">JustOffI80 Community Flyer</div>
+            <div class="flyer-name">${escapeHtml(listing.name || "")}</div>
+            ${listing.town ? `<div class="flyer-town">${escapeHtml(listing.town)}</div>` : ""}
+          </div>
+
+          <div class="flyer-top">
+            <div>
+              ${typeBadges ? `<div class="flyer-section-title">Categories</div><div class="flyer-type-badges">${typeBadges}</div>` : ""}
+
+              ${listing.notes ? `
+                <div class="flyer-section-title" style="margin-top:16px;">Description</div>
+                <div class="flyer-description">${escapeHtml(listing.notes)}</div>
+              ` : ""}
+
+              <div class="flyer-details">
+                ${listing.location ? `
+                  <div class="flyer-detail">
+                    <div class="flyer-detail-label">Address</div>
+                    <div class="flyer-detail-value">${escapeHtml(listing.location)}</div>
+                  </div>
+                ` : ""}
+
+                ${listing.contact ? `
+                  <div class="flyer-detail">
+                    <div class="flyer-detail-label">Phone</div>
+                    <div class="flyer-detail-value">${escapeHtml(listing.contact)}</div>
+                  </div>
+                ` : ""}
+              </div>
+            </div>
+
+            <div class="flyer-qr-box">
+              <div id="flyerQrMount"></div>
+              <div class="flyer-qr-text">Scan for listing details and map access</div>
+            </div>
+          </div>
+
+          <div class="flyer-footer">
+            <div>
+              <strong>JustOffI80</strong><br>
+              Free resource guide for Clearfield, Jefferson, and Clarion Counties
+            </div>
+            <div>
+              <div><strong>Listing Link</strong></div>
+              <div class="flyer-link">${escapeHtml(listingLink)}</div>
+            </div>
+          </div>
+        </div>
+      `;
+    }
+
+    function openFlyerModal(listing) {
+      activeFlyerListing = listing;
+      showFlyerMessage();
+      const preview = document.getElementById("flyerPreview");
+      preview.innerHTML = buildFlyerPreviewHtml(listing);
+
+      const qrMount = document.getElementById("flyerQrMount");
+      qrMount.innerHTML = "";
+
+      new QRCode(qrMount, {
+        text: makeListingUrl(listing.id),
+        width: 220,
+        height: 220,
+        colorDark: "#111111",
+        colorLight: "#ffffff",
+        correctLevel: QRCode.CorrectLevel.H
+      });
+
+      document.getElementById("flyerModal").classList.add("show");
+    }
+
+    function closeFlyerModal() {
+      activeFlyerListing = null;
+      document.getElementById("flyerModal").classList.remove("show");
+    }
+
+    function getFlyerQrDataUrl() {
+      const mount = document.getElementById("flyerQrMount");
+      const canvas = mount.querySelector("canvas");
+      const img = mount.querySelector("img");
+
+      if (canvas) return canvas.toDataURL("image/png");
+      if (img) return img.src;
+      return "";
+    }
+
+    function buildPrintableFlyerDocument(listing, qrDataUrl) {
+      const typeBadges = Array.isArray(listing.types)
+        ? listing.types.map(type => `<span class="flyer-type-badge">${escapeHtml(type)}</span>`).join("")
+        : "";
+      const listingLink = makeListingUrl(listing.id);
+
+      return `
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>${escapeHtml(listing.name || "Listing Flyer")} – JustOffI80</title>
+<style>
+  body{font-family:Arial,sans-serif;background:#ffffff;margin:0;padding:10mm;color:#111827;}
+  .sheet{max-width:none;margin:0 auto;border:none;border-radius:0;padding:0;}
+  .header{border-bottom:4px solid #2b5cff;padding-bottom:18px;margin-bottom:24px;}
+  .brand{font-size:14px;font-weight:bold;letter-spacing:.1em;text-transform:uppercase;color:#2b5cff;margin-bottom:8px;}
+  .name{font-size:42px;font-weight:800;line-height:1.05;margin-bottom:10px;}
+  .town{font-size:22px;color:#334155;font-weight:700;}
+  .top{display:grid;grid-template-columns:1fr 270px;gap:30px;align-items:start;margin-bottom:24px;}
+  .section-title{font-size:13px;text-transform:uppercase;letter-spacing:.08em;color:#64748b;font-weight:700;margin-bottom:10px;}
+  .description{font-size:19px;line-height:1.7;color:#111827;margin-bottom:22px;white-space:pre-wrap;}
+  .details{display:grid;gap:14px;margin-bottom:18px;}
+  .detail{background:#f8fafc;border:1px solid #e2e8f0;border-radius:12px;padding:16px 18px;}
+  .detail-label{font-size:12px;text-transform:uppercase;letter-spacing:.08em;color:#64748b;font-weight:700;margin-bottom:6px;}
+  .detail-value{color:#0f172a;font-size:18px;line-height:1.5;word-break:break-word;}
+  .type-badges{display:flex;flex-wrap:wrap;gap:10px;margin-bottom:8px;}
+  .flyer-type-badge{background:#eff6ff;color:#1d4ed8;border:1px solid #bfdbfe;border-radius:999px;padding:8px 14px;font-size:14px;font-weight:700;text-transform:capitalize;}
+  .qr-box{text-align:center;background:#ffffff;border:1px solid #dbe3eb;border-radius:16px;padding:20px;}
+  .qr-box img{max-width:220px;max-height:220px;display:block;margin:auto;}
+  .qr-text{margin-top:14px;font-size:16px;color:#334155;font-weight:600;line-height:1.5;}
+  .footer{border-top:1px solid #dbe3eb;margin-top:24px;padding-top:18px;font-size:15px;color:#475569;display:flex;justify-content:space-between;gap:14px;flex-wrap:wrap;}
+  .link{color:#2b5cff;font-weight:700;word-break:break-all;font-size:15px;}
+  @media print{
+    body{padding:0;}
+  }
+</style>
+</head>
+<body>
+  <div class="sheet">
+    <div class="header">
+      <div class="brand">JustOffI80 Community Flyer</div>
+      <div class="name">${escapeHtml(listing.name || "")}</div>
+      ${listing.town ? `<div class="town">${escapeHtml(listing.town)}</div>` : ""}
+    </div>
+
+    <div class="top">
+      <div>
+        ${typeBadges ? `<div class="section-title">Categories</div><div class="type-badges">${typeBadges}</div>` : ""}
+        ${listing.notes ? `<div class="section-title" style="margin-top:16px;">Description</div><div class="description">${escapeHtml(listing.notes)}</div>` : ""}
+        <div class="details">
+          ${listing.location ? `<div class="detail"><div class="detail-label">Address</div><div class="detail-value">${escapeHtml(listing.location)}</div></div>` : ""}
+          ${listing.contact ? `<div class="detail"><div class="detail-label">Phone</div><div class="detail-value">${escapeHtml(listing.contact)}</div></div>` : ""}
+        </div>
+      </div>
+
+      <div class="qr-box">
+        ${qrDataUrl ? `<img src="${qrDataUrl}" alt="QR code for ${escapeHtml(listing.name || "listing")}">` : ""}
+        <div class="qr-text">Scan for listing details and map access</div>
+      </div>
+    </div>
+
+    <div class="footer">
+      <div>
+        <strong>JustOffI80</strong><br>
+        Free resource guide for Clearfield, Jefferson, and Clarion Counties
+      </div>
+      <div>
+        <div><strong>Listing Link</strong></div>
+        <div class="link">${escapeHtml(listingLink)}</div>
+      </div>
+    </div>
+  </div>
+</body>
+</html>`;
+    }
+
+    function printFlyer() {
+      if (!activeFlyerListing) {
+        showFlyerMessage("", "No flyer is selected.");
+        return;
+      }
+
+      const qrDataUrl = getFlyerQrDataUrl();
+      const flyerHtml = buildPrintableFlyerDocument(activeFlyerListing, qrDataUrl);
+
+      const printWindow = window.open("", "_blank", "width=1100,height=1400");
+      if (!printWindow) {
+        showFlyerMessage("", "Popup blocked. Please allow popups to print the flyer.");
+        return;
+      }
+
+      printWindow.document.open();
+      printWindow.document.write(flyerHtml);
+      printWindow.document.close();
+      printWindow.focus();
+
+      setTimeout(() => {
+        printWindow.print();
+      }, 500);
+
+      showFlyerMessage("Print window opened.", "");
+    }
+
+    async function downloadFlyerPdf() {
+      if (!activeFlyerListing) {
+        showFlyerMessage("", "No flyer is selected.");
+        return;
+      }
+
+      const flyerSheet = document.getElementById("flyerSheet");
+      if (!flyerSheet) {
+        showFlyerMessage("", "Flyer preview is not ready.");
+        return;
+      }
+
+      showFlyerMessage("Building PDF...", "");
+
+      try {
+        const canvas = await html2canvas(flyerSheet, {
+          scale: 2.4,
+          backgroundColor: "#ffffff",
+          useCORS: true
+        });
+
+        const imgData = canvas.toDataURL("image/png");
+        const { jsPDF } = window.jspdf;
+        const pdf = new jsPDF("p", "mm", "letter");
+
+        const pageWidth = pdf.internal.pageSize.getWidth();
+        const pageHeight = pdf.internal.pageSize.getHeight();
+        const margin = 4;
+        const usableWidth = pageWidth - margin * 2;
+        const usableHeight = pageHeight - margin * 2;
+
+        const imgWidth = usableWidth;
+        const imgHeight = canvas.height * imgWidth / canvas.width;
+
+        if (imgHeight <= usableHeight) {
+          pdf.addImage(imgData, "PNG", margin, margin, imgWidth, imgHeight);
+        } else {
+          let position = 0;
+          const pageCanvas = document.createElement("canvas");
+          const pageCtx = pageCanvas.getContext("2d");
+
+          const pixelsPerMm = canvas.width / imgWidth;
+          const pageSliceHeightPx = Math.floor(usableHeight * pixelsPerMm);
+
+          pageCanvas.width = canvas.width;
+          pageCanvas.height = pageSliceHeightPx;
+
+          while (position < canvas.height) {
+            pageCtx.clearRect(0, 0, pageCanvas.width, pageCanvas.height);
+            pageCtx.fillStyle = "#ffffff";
+            pageCtx.fillRect(0, 0, pageCanvas.width, pageCanvas.height);
+
+            pageCtx.drawImage(
+              canvas,
+              0, position, canvas.width, pageSliceHeightPx,
+              0, 0, canvas.width, pageSliceHeightPx
+            );
+
+            const pageImgData = pageCanvas.toDataURL("image/png");
+            const sliceHeightMm = Math.min(usableHeight, pageSliceHeightPx / pixelsPerMm);
+
+            pdf.addImage(pageImgData, "PNG", margin, margin, imgWidth, sliceHeightMm);
+
+            position += pageSliceHeightPx;
+            if (position < canvas.height) {
+              pdf.addPage();
+            }
+          }
+        }
+
+        const safeName = makeSafeFileName(activeFlyerListing.name || "listing");
+        pdf.save(`${safeName}-flyer.pdf`);
+        showFlyerMessage("PDF downloaded.", "");
+      } catch (error) {
+        showFlyerMessage("", "PDF download failed. Please try again.");
+      }
     }
 
     async function copyEmbedCode() {
@@ -579,10 +1040,7 @@
         return;
       }
 
-      const safeName = normalize(activeQrListing?.name || "listing")
-        .toLowerCase()
-        .replace(/[^a-z0-9]+/g, "-")
-        .replace(/^-+|-+$/g, "") || "listing";
+      const safeName = makeSafeFileName(activeQrListing?.name || "listing");
 
       const a = document.createElement("a");
       a.href = dataUrl;
@@ -828,6 +1286,7 @@
           const popupContent = `
             <b>${escapeHtml(l.name || "")}</b><br>
             ${escapeHtml(l.town || "") ? `<div>${escapeHtml(l.town)}</div>` : ""}
+            ${escapeHtml(l.notes || "") ? `<div style="margin:8px 0;color:#444;">${escapeHtml(l.notes)}</div>` : ""}
             <a target="_blank" href="${makeGoogleMapsSearchUrl(l.location || "")}">${escapeHtml(l.location || "")}</a><br><br>
             <a href="tel:${phoneClean}">Call</a> |
             <a target="_blank" href="${makeGoogleMapsDirectionsUrl(l.location || "")}">Directions</a>
@@ -876,6 +1335,7 @@
             <a class="btn call" href="tel:${phoneClean}">Call</a>
             <a class="btn directions" target="_blank" rel="noopener noreferrer" href="${directionsUrl}">Directions</a>
             <button class="btn qr" type="button">QR Code</button>
+            <button class="btn flyer" type="button">Flyer</button>
             <button class="btn remove" type="button">Request Removal</button>
           </div>
         `;
@@ -890,6 +1350,12 @@
           event.preventDefault();
           event.stopPropagation();
           openQrModal(l);
+        });
+
+        card.querySelector(".flyer").addEventListener("click", (event) => {
+          event.preventDefault();
+          event.stopPropagation();
+          openFlyerModal(l);
         });
 
         container.appendChild(card);
@@ -941,6 +1407,13 @@
     document.getElementById("closeQrBtn").addEventListener("click", closeQrModal);
     document.getElementById("qrModal").addEventListener("click", (event) => {
       if (event.target.id === "qrModal") closeQrModal();
+    });
+
+    document.getElementById("printFlyerBtn").addEventListener("click", printFlyer);
+    document.getElementById("downloadFlyerPdfBtn").addEventListener("click", downloadFlyerPdf);
+    document.getElementById("closeFlyerBtn").addEventListener("click", closeFlyerModal);
+    document.getElementById("flyerModal").addEventListener("click", (event) => {
+      if (event.target.id === "flyerModal") closeFlyerModal();
     });
 
     renderSubmitCategoryOptions();
