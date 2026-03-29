@@ -69,7 +69,7 @@
     .form-box input,.form-box textarea,
     .modal-card input,.modal-card textarea{
       width:100%;padding:10px;margin-bottom:10px;border-radius:6px;border:1px solid #ccc;
-      font:inherit;
+      font:inherit;box-sizing:border-box;
     }
     .success{color:green;font-weight:bold;margin-top:10px;}
     .error{color:#b91c1c;font-weight:bold;margin-top:10px;white-space:pre-wrap;}
@@ -368,6 +368,7 @@
       <input id="s_contact" placeholder="Phone" />
       <input id="s_map_link" placeholder="Google Maps share link (optional, only needed for pin placement if no lat/lng)" />
       <textarea id="s_notes" placeholder="Description"></textarea>
+      <input id="s_image" type="file" accept="image/jpeg,image/png,image/webp" />
       <button id="submitBtn" class="submit-btn" onclick="submitListing()">Submit</button>
       <div id="formSuccess" class="success"></div>
       <div id="formError" class="error"></div>
@@ -1107,6 +1108,43 @@
       setTimeout(closeRemovalModal, 900);
     }
 
+    async function uploadListingImage(file, listingName) {
+      if (!file) return null;
+
+      const allowedTypes = ["image/jpeg", "image/png", "image/webp"];
+      if (!allowedTypes.includes(file.type)) {
+        throw new Error("Only JPG, PNG, or WEBP images are allowed.");
+      }
+
+      if (file.size > 2 * 1024 * 1024) {
+        throw new Error("Image must be under 2MB.");
+      }
+
+      const extension = (file.name.split(".").pop() || "jpg").toLowerCase();
+      const safeBase = makeSafeFileName(listingName);
+      const fileName = `${safeBase}-${Date.now()}.${extension}`;
+      const filePath = `listings/${fileName}`;
+
+      const { error: uploadError } = await supabase
+        .storage
+        .from("flyers")
+        .upload(filePath, file, {
+          cacheControl: "3600",
+          upsert: false
+        });
+
+      if (uploadError) {
+        throw new Error(uploadError.message || "Image upload failed.");
+      }
+
+      const { data } = supabase
+        .storage
+        .from("flyers")
+        .getPublicUrl(filePath);
+
+      return data?.publicUrl || null;
+    }
+
     window.toggleForm = function () {
       const form = document.getElementById("submissionForm");
       form.style.display = form.style.display === "none" ? "block" : "none";
@@ -1117,11 +1155,11 @@
 
       const name = normalize(document.getElementById("s_name").value);
       const types = getCheckedCategories("submit_types");
-      const town = normalize(document.getElementById("s_town").value);
       const location = normalize(document.getElementById("s_location").value);
       const contact = normalize(document.getElementById("s_contact").value);
       const map_link = normalize(document.getElementById("s_map_link").value);
       const notes = normalize(document.getElementById("s_notes").value);
+      const imageFile = document.getElementById("s_image").files[0] || null;
 
       showFormMessage();
 
@@ -1135,41 +1173,50 @@
         return;
       }
 
-      const payload = {
-        name,
-        types,
-        town,
-        location,
-        contact,
-        notes,
-        map_link,
-        approved: false
-      };
-
       submitBtn.disabled = true;
       submitBtn.innerText = "Submitting...";
 
-      const { error } = await supabase
-        .from("listings_core")
-        .insert([payload]);
+      try {
+        let image_path = null;
 
-      submitBtn.disabled = false;
-      submitBtn.innerText = "Submit";
+        if (imageFile) {
+          image_path = await uploadListingImage(imageFile, name);
+        }
 
-      if (error) {
-        showFormMessage("", `Submission failed: ${error.message}`);
-        return;
+        const payload = {
+          name,
+          types,
+          location,
+          contact,
+          notes,
+          map_link,
+          image_path
+        };
+
+        const { error } = await supabase
+          .from("listing_submissions")
+          .insert([payload]);
+
+        if (error) {
+          throw new Error(error.message);
+        }
+
+        showFormMessage("Submitted for approval.", "");
+
+        document.getElementById("s_name").value = "";
+        document.getElementById("s_town").value = "";
+        document.getElementById("s_location").value = "";
+        document.getElementById("s_contact").value = "";
+        document.getElementById("s_map_link").value = "";
+        document.getElementById("s_notes").value = "";
+        document.getElementById("s_image").value = "";
+        clearCheckedCategories("submit_types");
+      } catch (error) {
+        showFormMessage("", `Submission failed: ${error.message || error}`);
+      } finally {
+        submitBtn.disabled = false;
+        submitBtn.innerText = "Submit";
       }
-
-      showFormMessage("Submitted for approval.", "");
-
-      document.getElementById("s_name").value = "";
-      document.getElementById("s_town").value = "";
-      document.getElementById("s_location").value = "";
-      document.getElementById("s_contact").value = "";
-      document.getElementById("s_map_link").value = "";
-      document.getElementById("s_notes").value = "";
-      clearCheckedCategories("submit_types");
     };
 
     function openListingById(id) {
