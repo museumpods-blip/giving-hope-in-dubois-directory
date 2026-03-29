@@ -66,6 +66,21 @@
       font-size:14px;
       cursor:pointer;
     }
+    .preview-image{
+      width:100%;
+      max-height:280px;
+      object-fit:cover;
+      border:1px solid #ddd;
+      border-radius:10px;
+      background:#fafafa;
+    }
+    .image-link{
+      font-size:12px;
+      color:#2563eb;
+      word-break:break-all;
+      text-decoration:none;
+    }
+    .image-link:hover{text-decoration:underline;}
     @media (max-width:700px){.grid{grid-template-columns:1fr;}}
   </style>
 </head>
@@ -74,7 +89,7 @@
 
   <div class="container">
     <div class="topbar">
-      <div class="count">Pending listings: <span id="pendingCount">0</span></div>
+      <div class="count">Pending submissions: <span id="pendingCount">0</span></div>
       <div class="top-actions">
         <a class="link-btn" href="./index.html">Public Site</a>
         <button id="refreshBtn" class="refresh-btn" type="button">Refresh</button>
@@ -192,15 +207,32 @@
       return [...new Set([...checked, ...extraTypes])];
     }
 
-    function getPayload(card) {
+    function getSubmissionPayload(card) {
       return {
         name: normalize(card.querySelector('[data-field="name"]').value),
         types: getAdminTypes(card),
-        town: normalize(card.querySelector('[data-field="town"]').value),
         location: normalize(card.querySelector('[data-field="location"]').value),
         contact: normalize(card.querySelector('[data-field="contact"]').value),
         notes: normalize(card.querySelector('[data-field="notes"]').value),
-        map_link: normalize(card.querySelector('[data-field="map_link"]').value)
+        map_link: normalize(card.querySelector('[data-field="map_link"]').value),
+        image_path: normalize(card.querySelector('[data-field="image_path"]').value)
+      };
+    }
+
+    function getApprovalPayload(card) {
+      const base = getSubmissionPayload(card);
+      const town = normalize(card.querySelector('[data-field="town"]').value);
+
+      return {
+        name: base.name,
+        types: base.types,
+        town,
+        location: base.location,
+        contact: base.contact,
+        notes: base.notes,
+        map_link: base.map_link,
+        image_path: base.image_path,
+        approved: true
       };
     }
 
@@ -239,8 +271,8 @@
             </div>
 
             <div class="field">
-              <label>Town</label>
-              <input data-field="town" value="${escapeHtml(row.town || "")}" placeholder="DuBois">
+              <label>Town (for approved listing)</label>
+              <input data-field="town" value="" placeholder="Optional, example: DuBois">
             </div>
 
             <div class="field full">
@@ -280,6 +312,23 @@
               <label>Notes</label>
               <textarea data-field="notes">${escapeHtml(row.notes || "")}</textarea>
             </div>
+
+            <div class="field full">
+              <label>Image URL</label>
+              <input data-field="image_path" value="${escapeHtml(row.image_path || "")}">
+            </div>
+
+            ${
+              row.image_path
+                ? `
+                  <div class="field full">
+                    <label>Image Preview</label>
+                    <img class="preview-image" src="${escapeHtml(row.image_path)}" alt="${escapeHtml(row.name || "Submission image")}">
+                    <a class="image-link" href="${escapeHtml(row.image_path)}" target="_blank" rel="noopener noreferrer">${escapeHtml(row.image_path)}</a>
+                  </div>
+                `
+                : ""
+            }
           </div>
 
           <div class="actions">
@@ -289,10 +338,8 @@
           </div>
 
           <div class="meta">
-            <div><strong>ID:</strong> ${escapeHtml(row.id)}</div>
-            <div><strong>Approved:</strong> ${escapeHtml(String(row.approved))}</div>
-            <div><strong>Lat:</strong> ${escapeHtml(row.lat ?? "")}</div>
-            <div><strong>Lng:</strong> ${escapeHtml(row.lng ?? "")}</div>
+            <div><strong>Submission ID:</strong> ${escapeHtml(row.id)}</div>
+            <div><strong>Created:</strong> ${escapeHtml(row.created_at || "")}</div>
           </div>
         </div>
       `;
@@ -304,10 +351,9 @@
       rowsEl.innerHTML = `<div class="empty">Loading pending submissions...</div>`;
 
       const { data, error } = await supabase
-        .from("listings_core")
-        .select("id, name, types, town, location, contact, notes, lat, lng, map_link, approved")
-        .eq("approved", false)
-        .order("name", { ascending: true });
+        .from("listing_submissions")
+        .select("id, name, types, location, contact, notes, map_link, created_at, image_path")
+        .order("created_at", { ascending: false });
 
       refreshBtn.disabled = false;
 
@@ -330,6 +376,27 @@
       bindActions();
     }
 
+    async function insertApprovedListing(payload) {
+      const { error } = await supabase
+        .from("listings_core")
+        .insert([payload]);
+
+      if (!error) return { error: null };
+
+      if (String(error.message || "").toLowerCase().includes("image_path")) {
+        const retryPayload = { ...payload };
+        delete retryPayload.image_path;
+
+        const retry = await supabase
+          .from("listings_core")
+          .insert([retryPayload]);
+
+        return retry;
+      }
+
+      return { error };
+    }
+
     function bindActions() {
       const cards = rowsEl.querySelectorAll(".card");
 
@@ -337,7 +404,7 @@
         card.querySelector('[data-action="save"]').addEventListener("click", async () => {
           clearNotice();
           const id = card.dataset.id;
-          const payload = getPayload(card);
+          const payload = getSubmissionPayload(card);
 
           if (!payload.name || !payload.location) {
             showNotice("Name and Location are required.", "error");
@@ -352,8 +419,8 @@
           setBusy(card, true);
 
           const { error } = await supabase
-            .from("listings_core")
-            .update({ ...payload, approved: false })
+            .from("listing_submissions")
+            .update(payload)
             .eq("id", id);
 
           setBusy(card, false);
@@ -370,33 +437,46 @@
         card.querySelector('[data-action="approve"]').addEventListener("click", async () => {
           clearNotice();
           const id = card.dataset.id;
-          const payload = getPayload(card);
+          const submissionPayload = getSubmissionPayload(card);
+          const approvalPayload = getApprovalPayload(card);
 
-          if (!payload.name || !payload.location) {
+          if (!approvalPayload.name || !approvalPayload.location) {
             showNotice("Name and Location are required before approval.", "error");
             return;
           }
 
-          if (payload.types.length === 0) {
+          if (approvalPayload.types.length === 0) {
             showNotice("Please select at least one category before approval.", "error");
             return;
           }
 
           setBusy(card, true);
 
-          const { error } = await supabase
-            .from("listings_core")
-            .update({ ...payload, approved: true })
+          const insertResult = await insertApprovedListing(approvalPayload);
+
+          if (insertResult.error) {
+            setBusy(card, false);
+            showNotice(`Approve failed: ${insertResult.error.message}`, "error");
+            return;
+          }
+
+          const deleteResult = await supabase
+            .from("listing_submissions")
+            .delete()
             .eq("id", id);
 
           setBusy(card, false);
 
-          if (error) {
-            showNotice(`Approve failed: ${error.message}`, "error");
+          if (deleteResult.error) {
+            showNotice(
+              `Approved "${submissionPayload.name}", but failed to remove pending row: ${deleteResult.error.message}`,
+              "error"
+            );
+            await loadPending();
             return;
           }
 
-          showNotice(`Approved "${payload.name}"`, "success");
+          showNotice(`Approved "${submissionPayload.name}"`, "success");
           await loadPending();
         });
 
@@ -405,12 +485,12 @@
           const id = card.dataset.id;
           const name = normalize(card.querySelector('[data-field="name"]').value) || id;
 
-          if (!window.confirm(`Delete "${name}" permanently?`)) return;
+          if (!window.confirm(`Delete "${name}" permanently from pending submissions?`)) return;
 
           setBusy(card, true);
 
           const { error } = await supabase
-            .from("listings_core")
+            .from("listing_submissions")
             .delete()
             .eq("id", id);
 
