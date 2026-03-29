@@ -1227,7 +1227,7 @@
         };
 
         const { error } = await supabase
-          .from("listings_core")
+          .from("listing_submissions")
           .insert([payload]);
 
         if (error) {
