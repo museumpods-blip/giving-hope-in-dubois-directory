@@ -114,6 +114,15 @@
       font-weight:bold;
       text-transform:capitalize;
     }
+    .listing-image{
+      width:100%;
+      max-height:260px;
+      object-fit:cover;
+      border-radius:10px;
+      margin:10px 0 12px 0;
+      border:1px solid #e5e7eb;
+      background:#f8fafc;
+    }
     .modal-backdrop{
       position:fixed;
       inset:0;
@@ -281,6 +290,15 @@
       font-size:14px;
       font-weight:700;
       text-transform:capitalize;
+    }
+    .flyer-image{
+      width:100%;
+      max-height:360px;
+      object-fit:cover;
+      border-radius:14px;
+      border:1px solid #dbe3eb;
+      margin-bottom:20px;
+      background:#f8fafc;
     }
     .flyer-qr-box{
       text-align:center;
@@ -729,6 +747,8 @@
             ${listing.town ? `<div class="flyer-town">${escapeHtml(listing.town)}</div>` : ""}
           </div>
 
+          ${listing.image_path ? `<img class="flyer-image" src="${escapeHtml(listing.image_path)}" alt="${escapeHtml(listing.name || "Listing image")}">` : ""}
+
           <div class="flyer-top">
             <div>
               ${typeBadges ? `<div class="flyer-section-title">Categories</div><div class="flyer-type-badges">${typeBadges}</div>` : ""}
@@ -839,6 +859,7 @@
   .detail-value{color:#0f172a;font-size:18px;line-height:1.5;word-break:break-word;}
   .type-badges{display:flex;flex-wrap:wrap;gap:10px;margin-bottom:8px;}
   .flyer-type-badge{background:#eff6ff;color:#1d4ed8;border:1px solid #bfdbfe;border-radius:999px;padding:8px 14px;font-size:14px;font-weight:700;text-transform:capitalize;}
+  .flyer-image{width:100%;max-height:360px;object-fit:cover;border-radius:14px;border:1px solid #dbe3eb;margin-bottom:20px;background:#f8fafc;}
   .qr-box{text-align:center;background:#ffffff;border:1px solid #dbe3eb;border-radius:16px;padding:20px;}
   .qr-box img{max-width:220px;max-height:220px;display:block;margin:auto;}
   .qr-text{margin-top:14px;font-size:16px;color:#334155;font-weight:600;line-height:1.5;}
@@ -856,6 +877,8 @@
       <div class="name">${escapeHtml(listing.name || "")}</div>
       ${listing.town ? `<div class="town">${escapeHtml(listing.town)}</div>` : ""}
     </div>
+
+    ${listing.image_path ? `<img class="flyer-image" src="${escapeHtml(listing.image_path)}" alt="${escapeHtml(listing.name || "Listing image")}">` : ""}
 
     <div class="top">
       <div>
@@ -1241,7 +1264,7 @@
     async function loadListings() {
       const { data, error } = await supabase
         .from("listings_core")
-        .select("id, name, types, town, location, contact, notes, lat, lng, map_link, approved")
+        .select("id, name, types, town, location, contact, notes, lat, lng, map_link, image_path, approved")
         .eq("approved", true)
         .order("name", { ascending: true });
 
@@ -1362,6 +1385,10 @@
           ? l.types.map(type => `<span class="type-badge">${escapeHtml(type)}</span>`).join("")
           : "";
 
+        const imageHtml = l.image_path
+          ? `<img class="listing-image" src="${escapeHtml(l.image_path)}" alt="${escapeHtml(l.name || "Listing image")}">`
+          : "";
+
         const card = document.createElement("div");
         card.className = "card";
 
@@ -1379,6 +1406,7 @@
           <div class="name">${escapeHtml(l.name || "")}</div>
           ${l.town ? `<div class="town-row">${escapeHtml(l.town)}</div>` : ""}
           ${typeBadges ? `<div class="type-badges">${typeBadges}</div>` : ""}
+          ${imageHtml}
           <div class="address">
             <a href="${mapsSearchUrl}" target="_blank" rel="noopener noreferrer">
               ${escapeHtml(l.location || "")}
