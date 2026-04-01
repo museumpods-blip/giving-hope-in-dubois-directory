@@ -338,7 +338,7 @@
       font-size:15px;
       color:#475569;
       display:flex;
-      justify-content:space-between;
+      justify-content:flex-end;
       gap:14px;
       flex-wrap:wrap;
     }
@@ -348,6 +348,12 @@
       word-break:break-all;
       font-size:15px;
     }
+    .flyer-link a{
+      color:#2b5cff;
+      text-decoration:none;
+      word-break:break-all;
+    }
+    .flyer-link a:hover{text-decoration:underline;}
     @media (max-width:700px){
       .flyer-top{
         grid-template-columns:1fr;
@@ -757,7 +763,7 @@
       const typeBadges = Array.isArray(listing.types)
         ? listing.types.map(type => `<span class="flyer-type-badge">${escapeHtml(type)}</span>`).join("")
         : "";
-      const listingLink = makeListingUrl(listing.id);
+      const websiteUrl = normalizeWebsiteUrl(listing.website_url);
 
       return `
         <div class="flyer-sheet" id="flyerSheet">
@@ -793,12 +799,12 @@
                   </div>
                 ` : ""}
 
-                ${listing.website_url ? `
+                ${websiteUrl ? `
                   <div class="flyer-detail">
                     <div class="flyer-detail-label">Website</div>
                     <div class="flyer-detail-value">
-                      <a href="${escapeHtml(listing.website_url)}" target="_blank" rel="noopener noreferrer">
-                        ${escapeHtml(listing.website_url)}
+                      <a href="${escapeHtml(websiteUrl)}" target="_blank" rel="noopener noreferrer">
+                        ${escapeHtml(websiteUrl)}
                       </a>
                     </div>
                   </div>
@@ -809,17 +815,6 @@
             <div class="flyer-qr-box">
               <div id="flyerQrMount"></div>
               <div class="flyer-qr-text">Scan for listing details and map access</div>
-            </div>
-          </div>
-
-          <div class="flyer-footer">
-            <div>
-              <strong>JustOffI80</strong><br>
-              Free resource guide for Clearfield, Jefferson, and Clarion Counties
-            </div>
-            <div>
-              <div><strong>Listing Link</strong></div>
-              <div class="flyer-link">${escapeHtml(listingLink)}</div>
             </div>
           </div>
         </div>
@@ -866,7 +861,7 @@
       const typeBadges = Array.isArray(listing.types)
         ? listing.types.map(type => `<span class="flyer-type-badge">${escapeHtml(type)}</span>`).join("")
         : "";
-      const listingLink = makeListingUrl(listing.id);
+      const websiteUrl = normalizeWebsiteUrl(listing.website_url);
 
       return `
 <!DOCTYPE html>
@@ -895,8 +890,6 @@
   .qr-box{text-align:center;background:#ffffff;border:1px solid #dbe3eb;border-radius:16px;padding:20px;}
   .qr-box img{max-width:220px;max-height:220px;display:block;margin:auto;}
   .qr-text{margin-top:14px;font-size:16px;color:#334155;font-weight:600;line-height:1.5;}
-  .footer{border-top:1px solid #dbe3eb;margin-top:24px;padding-top:18px;font-size:15px;color:#475569;display:flex;justify-content:space-between;gap:14px;flex-wrap:wrap;}
-  .link{color:#2b5cff;font-weight:700;word-break:break-all;font-size:15px;}
   @media print{
     body{padding:0;}
   }
@@ -916,27 +909,38 @@
       <div>
         ${typeBadges ? `<div class="section-title">Categories</div><div class="type-badges">${typeBadges}</div>` : ""}
         ${listing.notes ? `<div class="section-title" style="margin-top:16px;">Description</div><div class="description">${escapeHtml(listing.notes)}</div>` : ""}
+
         <div class="details">
-          ${listing.location ? `<div class="detail"><div class="detail-label">Address</div><div class="detail-value">${escapeHtml(listing.location)}</div></div>` : ""}
-          ${listing.contact ? `<div class="detail"><div class="detail-label">Phone</div><div class="detail-value">${escapeHtml(listing.contact)}</div></div>` : ""}
-          ${listing.website_url ? `<div class="detail"><div class="detail-label">Website</div><div class="detail-value"><a href="${escapeHtml(listing.website_url)}" target="_blank" rel="noopener noreferrer">${escapeHtml(listing.website_url)}</a></div></div>` : ""}
+          ${listing.location ? `
+            <div class="detail">
+              <div class="detail-label">Address</div>
+              <div class="detail-value">${escapeHtml(listing.location)}</div>
+            </div>
+          ` : ""}
+
+          ${listing.contact ? `
+            <div class="detail">
+              <div class="detail-label">Phone</div>
+              <div class="detail-value">${escapeHtml(listing.contact)}</div>
+            </div>
+          ` : ""}
+
+          ${websiteUrl ? `
+            <div class="detail">
+              <div class="detail-label">Website</div>
+              <div class="detail-value">
+                <a href="${escapeHtml(websiteUrl)}" target="_blank" rel="noopener noreferrer">
+                  ${escapeHtml(websiteUrl)}
+                </a>
+              </div>
+            </div>
+          ` : ""}
         </div>
       </div>
 
       <div class="qr-box">
         ${qrDataUrl ? `<img src="${qrDataUrl}" alt="QR code for ${escapeHtml(listing.name || "listing")}">` : ""}
         <div class="qr-text">Scan for listing details and map access</div>
-      </div>
-    </div>
-
-    <div class="footer">
-      <div>
-        <strong>JustOffI80</strong><br>
-        Free resource guide for Clearfield, Jefferson, and Clarion Counties
-      </div>
-      <div>
-        <div><strong>Listing Link</strong></div>
-        <div class="link">${escapeHtml(listingLink)}</div>
       </div>
     </div>
   </div>
