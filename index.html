@@ -279,6 +279,12 @@
       line-height:1.5;
       word-break:break-word;
     }
+    .flyer-detail-value a{
+      color:#2563eb;
+      text-decoration:none;
+      word-break:break-all;
+    }
+    .flyer-detail-value a:hover{text-decoration:underline;}
     .flyer-type-badges{
       display:flex;
       flex-wrap:wrap;
@@ -786,6 +792,17 @@
                     <div class="flyer-detail-value">${escapeHtml(listing.contact)}</div>
                   </div>
                 ` : ""}
+
+                ${listing.website_url ? `
+                  <div class="flyer-detail">
+                    <div class="flyer-detail-label">Website</div>
+                    <div class="flyer-detail-value">
+                      <a href="${escapeHtml(listing.website_url)}" target="_blank" rel="noopener noreferrer">
+                        ${escapeHtml(listing.website_url)}
+                      </a>
+                    </div>
+                  </div>
+                ` : ""}
               </div>
             </div>
 
@@ -871,6 +888,7 @@
   .detail{background:#f8fafc;border:1px solid #e2e8f0;border-radius:12px;padding:16px 18px;}
   .detail-label{font-size:12px;text-transform:uppercase;letter-spacing:.08em;color:#64748b;font-weight:700;margin-bottom:6px;}
   .detail-value{color:#0f172a;font-size:18px;line-height:1.5;word-break:break-word;}
+  .detail-value a{color:#2563eb;text-decoration:none;word-break:break-all;}
   .type-badges{display:flex;flex-wrap:wrap;gap:10px;margin-bottom:8px;}
   .flyer-type-badge{background:#eff6ff;color:#1d4ed8;border:1px solid #bfdbfe;border-radius:999px;padding:8px 14px;font-size:14px;font-weight:700;text-transform:capitalize;}
   .flyer-image{width:100%;max-height:360px;object-fit:cover;border-radius:14px;border:1px solid #dbe3eb;margin-bottom:20px;background:#f8fafc;}
@@ -901,6 +919,7 @@
         <div class="details">
           ${listing.location ? `<div class="detail"><div class="detail-label">Address</div><div class="detail-value">${escapeHtml(listing.location)}</div></div>` : ""}
           ${listing.contact ? `<div class="detail"><div class="detail-label">Phone</div><div class="detail-value">${escapeHtml(listing.contact)}</div></div>` : ""}
+          ${listing.website_url ? `<div class="detail"><div class="detail-label">Website</div><div class="detail-value"><a href="${escapeHtml(listing.website_url)}" target="_blank" rel="noopener noreferrer">${escapeHtml(listing.website_url)}</a></div></div>` : ""}
         </div>
       </div>
 
