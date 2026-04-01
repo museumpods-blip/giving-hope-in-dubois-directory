@@ -50,9 +50,6 @@
     .address{color:#555;margin-bottom:8px;}
     .address a{color:#2b5cff;text-decoration:none;}
     .address a:hover{text-decoration:underline;}
-    .website-row{margin-top:6px;margin-bottom:2px;}
-    .website-link{color:#2563eb;font-weight:bold;text-decoration:none;word-break:break-all;}
-    .website-link:hover{text-decoration:underline;}
     .buttons{display:flex;gap:8px;margin-top:10px;flex-wrap:wrap;}
     .btn{
       flex:1;padding:10px;border-radius:6px;text-align:center;text-decoration:none;
@@ -212,9 +209,6 @@
       padding-bottom:12px;
       margin-bottom:16px;
     }
-    .flyer-brand{
-      display:none;
-    }
     .flyer-name{
       font-size:32px;
       font-weight:800;
@@ -274,12 +268,6 @@
       line-height:1.4;
       word-break:break-word;
     }
-    .flyer-detail-value a{
-      color:#2563eb;
-      text-decoration:none;
-      word-break:break-all;
-    }
-    .flyer-detail-value a:hover{text-decoration:underline;}
     .flyer-image{
       width:100%;
       max-height:160px;
@@ -355,7 +343,7 @@
       <input id="s_town" placeholder="Town (example: DuBois)" />
       <input id="s_location" placeholder="Full Address (required)" required />
       <input id="s_contact" placeholder="Phone" />
-      <input id="s_website" placeholder="Website (optional, include https://)" />
+      <input id="s_website" placeholder="Website (temporarily not used on live site)" />
       <input id="s_map_link" placeholder="Google Maps share link (optional, only needed for pin placement if no lat/lng)" />
       <textarea id="s_notes" placeholder="Description"></textarea>
       <input id="s_image" type="file" accept="image/jpeg,image/png,image/webp" />
@@ -595,8 +583,11 @@
     }
 
     function extractCoords(link, lat, lng) {
-      if (typeof lat === "number" && typeof lng === "number") {
-        return { lat, lng };
+      const latNum = typeof lat === "number" ? lat : parseFloat(lat);
+      const lngNum = typeof lng === "number" ? lng : parseFloat(lng);
+
+      if (!Number.isNaN(latNum) && !Number.isNaN(lngNum)) {
+        return { lat: latNum, lng: lngNum };
       }
 
       if (!link) return null;
@@ -606,7 +597,12 @@
         return { lat: parseFloat(match[1]), lng: parseFloat(match[2]) };
       }
 
-      match = link.match(/q=(-?\d+\.\d+),(-?\d+\.\d+)/);
+      match = link.match(/[?&]q=(-?\d+\.\d+),(-?\d+\.\d+)/);
+      if (match) {
+        return { lat: parseFloat(match[1]), lng: parseFloat(match[2]) };
+      }
+
+      match = link.match(/[?&]ll=(-?\d+\.\d+),(-?\d+\.\d+)/);
       if (match) {
         return { lat: parseFloat(match[1]), lng: parseFloat(match[2]) };
       }
@@ -682,14 +678,12 @@
     function openQrModal(listing) {
       activeQrListing = listing;
       activeQrLink = makeListingUrl(listing.id);
-      const websiteUrl = normalizeWebsiteUrl(listing.website_url);
 
       document.getElementById("qrMeta").innerHTML = `
         <div><strong>Listing:</strong> ${escapeHtml(listing.name || "")}</div>
         ${listing.town ? `<div><strong>Town:</strong> ${escapeHtml(listing.town)}</div>` : ""}
         ${listing.location ? `<div><strong>Address:</strong> ${escapeHtml(listing.location)}</div>` : ""}
         ${listing.contact ? `<div><strong>Phone:</strong> ${escapeHtml(listing.contact)}</div>` : ""}
-        ${websiteUrl ? `<div><strong>Website:</strong> <a href="${escapeHtml(websiteUrl)}" target="_blank" rel="noopener noreferrer">${escapeHtml(websiteUrl)}</a></div>` : ""}
       `;
 
       const mount = document.getElementById("qrCodeMount");
@@ -716,23 +710,6 @@
     }
 
     function buildFlyerPreviewHtml(listing) {
-      const websiteUrl = normalizeWebsiteUrl(listing.website_url || "");
-      const websiteBlock = websiteUrl ? `
-        <div class="flyer-detail">
-          <div class="flyer-detail-label">Website</div>
-          <div class="flyer-detail-value">
-            <a href="${escapeHtml(websiteUrl)}" target="_blank" rel="noopener noreferrer">
-              ${escapeHtml(websiteUrl)}
-            </a>
-          </div>
-        </div>
-      ` : `
-        <div class="flyer-detail">
-          <div class="flyer-detail-label">Website</div>
-          <div class="flyer-detail-value">Not provided</div>
-        </div>
-      `;
-
       return `
         <div class="flyer-sheet" id="flyerSheet">
           <div class="flyer-header">
@@ -763,8 +740,6 @@
                     <div class="flyer-detail-value">${escapeHtml(listing.contact)}</div>
                   </div>
                 ` : ""}
-
-                ${websiteBlock}
               </div>
             </div>
 
@@ -814,23 +789,6 @@
     }
 
     function buildPrintableFlyerDocument(listing, qrDataUrl) {
-      const websiteUrl = normalizeWebsiteUrl(listing.website_url || "");
-      const websiteBlock = websiteUrl ? `
-        <div class="detail">
-          <div class="detail-label">Website</div>
-          <div class="detail-value">
-            <a href="${escapeHtml(websiteUrl)}" target="_blank" rel="noopener noreferrer">
-              ${escapeHtml(websiteUrl)}
-            </a>
-          </div>
-        </div>
-      ` : `
-        <div class="detail">
-          <div class="detail-label">Website</div>
-          <div class="detail-value">Not provided</div>
-        </div>
-      `;
-
       return `
 <!DOCTYPE html>
 <html lang="en">
@@ -916,11 +874,6 @@
     line-height:1.4;
     word-break:break-word;
   }
-  .detail-value a{
-    color:#2563eb;
-    text-decoration:none;
-    word-break:break-all;
-  }
   .flyer-image{
     width:100%;
     max-height:160px;
@@ -949,12 +902,6 @@
     color:#334155;
     font-weight:600;
     line-height:1.35;
-  }
-  @media print{
-    html,body{
-      margin:0;
-      padding:0;
-    }
   }
 </style>
 </head>
@@ -985,8 +932,6 @@
               <div class="detail-value">${escapeHtml(listing.contact)}</div>
             </div>
           ` : ""}
-
-          ${websiteBlock}
         </div>
       </div>
 
@@ -1356,7 +1301,7 @@
     async function loadListings() {
       const { data, error } = await supabase
         .from("listings_core")
-        .select("id, name, types, town, location, contact, website, notes, lat, lng, map_link, image_path, approved")
+        .select("*")
         .eq("approved", true)
         .order("name", { ascending: true });
 
@@ -1367,7 +1312,6 @@
 
       listings = (data || []).map(row => ({
         ...row,
-        website_url: normalizeWebsiteUrl(row.website || ""),
         types: parseTypes(row.types)
       }));
 
@@ -1454,9 +1398,6 @@
 
         if (coords) {
           const phoneClean = cleanPhone(l.contact);
-          const websiteLink = l.website_url
-            ? ` | <a target="_blank" rel="noopener noreferrer" href="${escapeHtml(l.website_url)}">Website</a>`
-            : "";
 
           const popupContent = `
             <b>${escapeHtml(l.name || "")}</b><br>
@@ -1465,7 +1406,6 @@
             <a target="_blank" href="${makeGoogleMapsSearchUrl(l.location || "")}">${escapeHtml(l.location || "")}</a><br><br>
             <a href="tel:${phoneClean}">Call</a> |
             <a target="_blank" href="${makeGoogleMapsDirectionsUrl(l.location || "")}">Directions</a>
-            ${websiteLink}
           `;
 
           const marker = L.marker([coords.lat, coords.lng])
@@ -1485,16 +1425,6 @@
 
         const imageHtml = l.image_path
           ? `<img class="listing-image" src="${escapeHtml(l.image_path)}" alt="${escapeHtml(l.name || "Listing image")}">`
-          : "";
-
-        const websiteHtml = l.website_url
-          ? `
-            <div class="website-row">
-              <a class="website-link" href="${escapeHtml(l.website_url)}" target="_blank" rel="noopener noreferrer">
-                🌐 Visit Website
-              </a>
-            </div>
-          `
           : "";
 
         const card = document.createElement("div");
@@ -1522,7 +1452,6 @@
           </div>
           <div>${escapeHtml(l.notes || "")}</div>
           <div>Phone: ${escapeHtml(l.contact || "")}</div>
-          ${websiteHtml}
           <div class="buttons">
             <a class="btn call" href="tel:${phoneClean}">Call</a>
             <a class="btn directions" target="_blank" rel="noopener noreferrer" href="${directionsUrl}">Directions</a>
