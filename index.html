@@ -11,7 +11,7 @@
 </script>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>TEST 555 – JustOffI80</title>
+  <title>JustOffI80 – An I-80 Exit Guide</title>
 
   <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css"/>
 
@@ -327,7 +327,7 @@
   </style>
 </head>
 <body>
-  <header>TEST 555 – Just Off I-80</header>
+  <header>Just Off I-80 – A Free Resource Guide Serving Clearfield, Jefferson, and Clarion Counties</header>
 
   <div style="text-align:center;padding:18px 20px;background:#ffffff;box-shadow:0 2px 6px rgba(0,0,0,0.06);">
     <div style="font-size:16px;font-style:italic;color:#444;margin-bottom:10px;"></div>
@@ -601,12 +601,12 @@
 
       if (!link) return null;
 
-      let match = link.match(/@(-?\\d+\\.\\d+),(-?\\d+\\.\\d+)/);
+      let match = link.match(/@(-?\d+\.\d+),(-?\d+\.\d+)/);
       if (match) {
         return { lat: parseFloat(match[1]), lng: parseFloat(match[2]) };
       }
 
-      match = link.match(/q=(-?\\d+\\.\\d+),(-?\\d+\\.\\d+)/);
+      match = link.match(/q=(-?\d+\.\d+),(-?\d+\.\d+)/);
       if (match) {
         return { lat: parseFloat(match[1]), lng: parseFloat(match[2]) };
       }
@@ -1269,7 +1269,7 @@
       const types = getCheckedCategories("submit_types");
       const location = normalize(document.getElementById("s_location").value);
       const contact = normalize(document.getElementById("s_contact").value);
-      const website_url = normalizeWebsiteUrl(document.getElementById("s_website").value);
+      const website = normalizeWebsiteUrl(document.getElementById("s_website").value);
       const map_link = normalize(document.getElementById("s_map_link").value);
       const notes = normalize(document.getElementById("s_notes").value);
       const imageFile = document.getElementById("s_image").files[0] || null;
@@ -1301,7 +1301,7 @@
           types,
           location,
           contact,
-          website_url,
+          website,
           notes,
           map_link,
           image_path
@@ -1356,7 +1356,7 @@
     async function loadListings() {
       const { data, error } = await supabase
         .from("listings_core")
-        .select("id, name, types, town, location, contact, website_url, notes, lat, lng, map_link, image_path, approved")
+        .select("id, name, types, town, location, contact, website, notes, lat, lng, map_link, image_path, approved")
         .eq("approved", true)
         .order("name", { ascending: true });
 
@@ -1367,7 +1367,7 @@
 
       listings = (data || []).map(row => ({
         ...row,
-        website_url: normalizeWebsiteUrl(row.website_url),
+        website_url: normalizeWebsiteUrl(row.website || ""),
         types: parseTypes(row.types)
       }));
 
