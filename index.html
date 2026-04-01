@@ -50,8 +50,8 @@
     .address{color:#555;margin-bottom:8px;}
     .address a{color:#2b5cff;text-decoration:none;}
     .address a:hover{text-decoration:underline;}
-    .website-row{margin:8px 0 4px 0;}
-    .website-link{color:#2563eb;text-decoration:none;font-weight:bold;word-break:break-all;}
+    .website-row{margin-top:6px;margin-bottom:2px;}
+    .website-link{color:#2563eb;font-weight:bold;text-decoration:none;word-break:break-all;}
     .website-link:hover{text-decoration:underline;}
     .buttons{display:flex;gap:8px;margin-top:10px;flex-wrap:wrap;}
     .btn{
@@ -534,13 +534,6 @@
       return normalize(value).toLowerCase();
     }
 
-    function normalizeWebsiteUrl(value) {
-      const trimmed = normalize(value);
-      if (!trimmed) return "";
-      if (/^https?:\/\//i.test(trimmed)) return trimmed;
-      return `https://${trimmed}`;
-    }
-
     function parseTypes(value) {
       if (Array.isArray(value)) {
         return value.map(v => normalizeCategory(v)).filter(Boolean);
@@ -557,6 +550,13 @@
       } catch (error) {}
 
       return raw.split(",").map(v => normalizeCategory(v)).filter(Boolean);
+    }
+
+    function normalizeWebsiteUrl(url) {
+      const value = normalize(url);
+      if (!value) return "";
+      if (/^https?:\/\//i.test(value)) return value;
+      return `https://${value}`;
     }
 
     function renderSubmitCategoryOptions() {
@@ -601,12 +601,12 @@
 
       if (!link) return null;
 
-      let match = link.match(/@(-?\d+\.\d+),(-?\d+\.\d+)/);
+      let match = link.match(/@(-?\\d+\\.\\d+),(-?\\d+\\.\\d+)/);
       if (match) {
         return { lat: parseFloat(match[1]), lng: parseFloat(match[2]) };
       }
 
-      match = link.match(/q=(-?\d+\.\d+),(-?\d+\.\d+)/);
+      match = link.match(/q=(-?\\d+\\.\\d+),(-?\\d+\\.\\d+)/);
       if (match) {
         return { lat: parseFloat(match[1]), lng: parseFloat(match[2]) };
       }
@@ -682,13 +682,14 @@
     function openQrModal(listing) {
       activeQrListing = listing;
       activeQrLink = makeListingUrl(listing.id);
+      const websiteUrl = normalizeWebsiteUrl(listing.website_url);
 
       document.getElementById("qrMeta").innerHTML = `
         <div><strong>Listing:</strong> ${escapeHtml(listing.name || "")}</div>
         ${listing.town ? `<div><strong>Town:</strong> ${escapeHtml(listing.town)}</div>` : ""}
         ${listing.location ? `<div><strong>Address:</strong> ${escapeHtml(listing.location)}</div>` : ""}
         ${listing.contact ? `<div><strong>Phone:</strong> ${escapeHtml(listing.contact)}</div>` : ""}
-        ${listing.website_url ? `<div><strong>Website:</strong> <a href="${escapeHtml(listing.website_url)}" target="_blank" rel="noopener noreferrer">${escapeHtml(listing.website_url)}</a></div>` : ""}
+        ${websiteUrl ? `<div><strong>Website:</strong> <a href="${escapeHtml(websiteUrl)}" target="_blank" rel="noopener noreferrer">${escapeHtml(websiteUrl)}</a></div>` : ""}
       `;
 
       const mount = document.getElementById("qrCodeMount");
@@ -1453,6 +1454,10 @@
 
         if (coords) {
           const phoneClean = cleanPhone(l.contact);
+          const websiteLink = l.website_url
+            ? ` | <a target="_blank" rel="noopener noreferrer" href="${escapeHtml(l.website_url)}">Website</a>`
+            : "";
+
           const popupContent = `
             <b>${escapeHtml(l.name || "")}</b><br>
             ${escapeHtml(l.town || "") ? `<div>${escapeHtml(l.town)}</div>` : ""}
@@ -1460,7 +1465,7 @@
             <a target="_blank" href="${makeGoogleMapsSearchUrl(l.location || "")}">${escapeHtml(l.location || "")}</a><br><br>
             <a href="tel:${phoneClean}">Call</a> |
             <a target="_blank" href="${makeGoogleMapsDirectionsUrl(l.location || "")}">Directions</a>
-            ${l.website_url ? ` | <a target="_blank" rel="noopener noreferrer" href="${escapeHtml(l.website_url)}">Website</a>` : ""}
+            ${websiteLink}
           `;
 
           const marker = L.marker([coords.lat, coords.lng])
