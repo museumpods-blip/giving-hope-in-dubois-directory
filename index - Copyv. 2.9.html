@@ -1,0 +1,1540 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<!-- Google tag (gtag.js) -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-BWTW3D9CTF"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+
+  gtag('config', 'G-BWTW3D9CTF');
+</script>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>JustOffI80 – An I-80 Exit Guide</title>
+
+  <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css"/>
+
+  <style>
+    body{font-family:Arial,sans-serif;margin:0;background:#f4f4f4;}
+    header{background:#2b5cff;color:white;padding:18px;text-align:center;font-size:22px;font-weight:bold;}
+    .container{max-width:900px;margin:auto;padding:16px;}
+    .top-actions{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:10px;}
+    .search input{width:100%;padding:12px;font-size:16px;border-radius:8px;border:1px solid #ccc;margin-bottom:12px;}
+    .filters{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:14px;}
+    .filter{background:white;border:1px solid #ddd;padding:8px 14px;border-radius:20px;cursor:pointer;font-size:14px;text-transform:capitalize;}
+    .filter.active{background:#2b5cff;color:white;}
+    .locate-btn,.submit-btn,.modal-btn,.embed-btn,.copy-btn,.download-btn,.print-btn,.pdf-btn{
+      background:#2b5cff;color:white;border:none;padding:10px 14px;
+      border-radius:6px;cursor:pointer;margin-bottom:10px;
+    }
+    .modal-btn.secondary{background:#666;}
+    .embed-btn{background:#0f766e;}
+    .copy-btn{background:#2563eb;margin-bottom:0;}
+    .download-btn{background:#7c3aed;margin-bottom:0;}
+    .print-btn{background:#ea580c;margin-bottom:0;}
+    .pdf-btn{background:#0f766e;margin-bottom:0;}
+    #map{height:320px;border-radius:10px;margin-bottom:20px;}
+    .card{
+      background:white;border-radius:10px;padding:16px;margin-bottom:12px;
+      box-shadow:0 2px 6px rgba(0,0,0,0.08);
+      cursor:pointer;transition:0.2s;
+    }
+    .card:hover{box-shadow:0 4px 10px rgba(0,0,0,0.15);}
+    .card.highlight{
+      border:2px solid #2b5cff;
+      box-shadow:0 6px 16px rgba(0,0,0,0.2);
+    }
+    .name{font-size:18px;font-weight:bold;}
+    .town-row{margin:6px 0 8px 0;font-size:14px;color:#2b5cff;font-weight:bold;}
+    .address{color:#555;margin-bottom:8px;}
+    .address a{color:#2b5cff;text-decoration:none;}
+    .address a:hover{text-decoration:underline;}
+    .website-row{margin-top:6px;margin-bottom:2px;}
+    .website-link{color:#2563eb;font-weight:bold;text-decoration:none;word-break:break-all;}
+    .website-link:hover{text-decoration:underline;}
+    .buttons{display:flex;gap:8px;margin-top:10px;flex-wrap:wrap;}
+    .btn{
+      flex:1;padding:10px;border-radius:6px;text-align:center;text-decoration:none;
+      color:white;font-size:14px;border:none;cursor:pointer;
+    }
+    .call{background:#28a745;}
+    .directions{background:#444;}
+    .remove{background:#c82333;}
+    .qr{background:#7c3aed;}
+    .flyer{background:#ea580c;}
+    .form-box,.modal-card{
+      background:white;padding:16px;border-radius:10px;margin-bottom:20px;
+      box-shadow:0 2px 6px rgba(0,0,0,0.08);
+    }
+    .form-box{display:none;}
+    .form-box input,.form-box textarea,
+    .modal-card input,.modal-card textarea{
+      width:100%;padding:10px;margin-bottom:10px;border-radius:6px;border:1px solid #ccc;
+      font:inherit;box-sizing:border-box;
+    }
+    .success{color:green;font-weight:bold;margin-top:10px;}
+    .error{color:#b91c1c;font-weight:bold;margin-top:10px;white-space:pre-wrap;}
+    .category-box{
+      border:1px solid #ccc;
+      border-radius:6px;
+      padding:10px;
+      background:#fff;
+      margin-bottom:10px;
+    }
+    .category-title{
+      font-size:14px;
+      font-weight:bold;
+      margin-bottom:8px;
+      color:#444;
+    }
+    .category-grid{
+      display:flex;
+      flex-wrap:wrap;
+      gap:8px 12px;
+    }
+    .category-grid label{
+      display:flex;
+      align-items:center;
+      gap:6px;
+      font-size:14px;
+      cursor:pointer;
+    }
+    .type-badges{
+      display:flex;
+      flex-wrap:wrap;
+      gap:6px;
+      margin:8px 0;
+    }
+    .type-badge{
+      background:#eef4ff;
+      color:#2b5cff;
+      border:1px solid #cddcff;
+      border-radius:999px;
+      padding:4px 10px;
+      font-size:12px;
+      font-weight:bold;
+      text-transform:capitalize;
+    }
+    .listing-image{
+      width:100%;
+      max-height:260px;
+      object-fit:cover;
+      border-radius:10px;
+      margin:10px 0 12px 0;
+      border:1px solid #e5e7eb;
+      background:#f8fafc;
+    }
+    .modal-backdrop{
+      position:fixed;
+      inset:0;
+      background:rgba(0,0,0,0.45);
+      display:none;
+      align-items:center;
+      justify-content:center;
+      padding:20px;
+      z-index:9999;
+    }
+    .modal-backdrop.show{display:flex;}
+    .modal-card{
+      width:min(100%, 560px);
+      margin:0;
+      max-height:90vh;
+      overflow:auto;
+    }
+    .modal-title{font-size:20px;font-weight:bold;margin-bottom:10px;}
+    .modal-meta{font-size:14px;color:#555;margin-bottom:10px;line-height:1.5;}
+    .modal-actions{display:flex;gap:8px;flex-wrap:wrap;}
+    .embed-text{
+      width:100%;
+      min-height:140px;
+      font-family:Consolas, monospace;
+      font-size:13px;
+      background:#f8fafc;
+    }
+    .embed-help{
+      color:#555;
+      font-size:14px;
+      line-height:1.5;
+      margin-bottom:10px;
+    }
+    .qr-wrap{
+      display:flex;
+      justify-content:center;
+      align-items:center;
+      background:#fff;
+      border:1px solid #ddd;
+      border-radius:12px;
+      padding:16px;
+      margin:12px 0;
+      min-height:240px;
+    }
+    .qr-wrap img,
+    .qr-wrap canvas{
+      max-width:220px;
+      max-height:220px;
+    }
+    .qr-link-box{
+      width:100%;
+      font-family:Consolas, monospace;
+      font-size:13px;
+      background:#f8fafc;
+      min-height:80px;
+    }
+    .flyer-modal-card{
+      width:min(100%, 980px);
+    }
+    .flyer-help{
+      color:#555;
+      font-size:15px;
+      line-height:1.5;
+      margin-bottom:12px;
+    }
+    .flyer-preview{
+      background:#e2e8f0;
+      border:1px solid #cbd5e1;
+      border-radius:16px;
+      padding:18px;
+    }
+    .flyer-sheet{
+      background:#ffffff;
+      border:1px solid #cfd8e3;
+      border-radius:16px;
+      padding:34px;
+      max-width:860px;
+      margin:auto;
+      box-shadow:0 3px 16px rgba(0,0,0,0.08);
+    }
+    .flyer-header{
+      border-bottom:4px solid #2b5cff;
+      padding-bottom:18px;
+      margin-bottom:24px;
+    }
+    .flyer-brand{
+      font-size:14px;
+      font-weight:bold;
+      letter-spacing:.1em;
+      text-transform:uppercase;
+      color:#2b5cff;
+      margin-bottom:8px;
+    }
+    .flyer-name{
+      font-size:42px;
+      font-weight:800;
+      line-height:1.05;
+      color:#111827;
+      margin-bottom:10px;
+    }
+    .flyer-town{
+      font-size:22px;
+      color:#334155;
+      font-weight:700;
+    }
+    .flyer-top{
+      display:grid;
+      grid-template-columns:1fr 270px;
+      gap:30px;
+      align-items:start;
+      margin-bottom:24px;
+    }
+    .flyer-section-title{
+      font-size:13px;
+      text-transform:uppercase;
+      letter-spacing:.08em;
+      color:#64748b;
+      font-weight:700;
+      margin-bottom:10px;
+    }
+    .flyer-description{
+      font-size:19px;
+      line-height:1.7;
+      color:#111827;
+      margin-bottom:22px;
+      white-space:pre-wrap;
+    }
+    .flyer-details{
+      display:grid;
+      gap:14px;
+      margin-bottom:18px;
+    }
+    .flyer-detail{
+      background:#f8fafc;
+      border:1px solid #e2e8f0;
+      border-radius:12px;
+      padding:16px 18px;
+    }
+    .flyer-detail-label{
+      font-size:12px;
+      text-transform:uppercase;
+      letter-spacing:.08em;
+      color:#64748b;
+      font-weight:700;
+      margin-bottom:6px;
+    }
+    .flyer-detail-value{
+      color:#0f172a;
+      font-size:18px;
+      line-height:1.5;
+      word-break:break-word;
+    }
+    .flyer-type-badges{
+      display:flex;
+      flex-wrap:wrap;
+      gap:10px;
+      margin-bottom:8px;
+    }
+    .flyer-type-badge{
+      background:#eff6ff;
+      color:#1d4ed8;
+      border:1px solid #bfdbfe;
+      border-radius:999px;
+      padding:8px 14px;
+      font-size:14px;
+      font-weight:700;
+      text-transform:capitalize;
+    }
+    .flyer-image{
+      width:100%;
+      max-height:360px;
+      object-fit:cover;
+      border-radius:14px;
+      border:1px solid #dbe3eb;
+      margin-bottom:20px;
+      background:#f8fafc;
+    }
+    .flyer-qr-box{
+      text-align:center;
+      background:#ffffff;
+      border:1px solid #dbe3eb;
+      border-radius:16px;
+      padding:20px;
+    }
+    .flyer-qr-box img,
+    .flyer-qr-box canvas{
+      max-width:220px;
+      max-height:220px;
+      margin:auto;
+      display:block;
+    }
+    .flyer-qr-text{
+      margin-top:14px;
+      font-size:16px;
+      color:#334155;
+      font-weight:600;
+      line-height:1.5;
+    }
+    .flyer-footer{
+      border-top:1px solid #dbe3eb;
+      margin-top:24px;
+      padding-top:18px;
+      font-size:15px;
+      color:#475569;
+      display:flex;
+      justify-content:space-between;
+      gap:14px;
+      flex-wrap:wrap;
+    }
+    .flyer-link{
+      color:#2b5cff;
+      font-weight:700;
+      word-break:break-all;
+      font-size:15px;
+    }
+    @media (max-width:700px){
+      .flyer-top{
+        grid-template-columns:1fr;
+      }
+      .flyer-sheet{
+        padding:22px;
+      }
+      .flyer-name{
+        font-size:32px;
+      }
+      .flyer-description{
+        font-size:17px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <header>Just Off I-80 – A Free Resource Guide Serving Clearfield, Jefferson, and Clarion Counties</header>
+
+  <div style="text-align:center;padding:18px 20px;background:#ffffff;box-shadow:0 2px 6px rgba(0,0,0,0.06);">
+    <div style="font-size:16px;font-style:italic;color:#444;margin-bottom:10px;">
+    </div>
+    <div style="font-size:15px;color:#555;line-height:1.6;max-width:700px;margin:0 auto;">
+      Organizations serving the I-80 corridor in western Pennsylvania may submit a listing for review and possible inclusion.
+    </div>
+  </div>
+
+  <div class="container">
+    <div class="top-actions">
+      <button class="submit-btn" onclick="toggleForm()">+ Submit Listing</button>
+      <button id="locateBtn" class="locate-btn">📍 Locate Me</button>
+      <button id="openEmbedBtn" class="embed-btn" type="button">Embed This Site</button>
+    </div>
+
+    <div id="submissionForm" class="form-box">
+      <h3>Submit a Listing</h3>
+      <input id="s_name" placeholder="Organization Name" required />
+
+      <div class="category-box">
+        <div class="category-title">Select Categories</div>
+        <div class="category-grid" id="submitCategoryGrid"></div>
+      </div>
+
+      <input id="s_town" placeholder="Town (example: DuBois)" />
+      <input id="s_location" placeholder="Full Address (required)" required />
+      <input id="s_contact" placeholder="Phone" />
+      <input id="s_website" placeholder="Website (optional, include https://)" />
+      <input id="s_map_link" placeholder="Google Maps share link (optional, only needed for pin placement if no lat/lng)" />
+      <textarea id="s_notes" placeholder="Description"></textarea>
+      <input id="s_image" type="file" accept="image/jpeg,image/png,image/webp" />
+      <button id="submitBtn" class="submit-btn" onclick="submitListing()">Submit</button>
+      <div id="formSuccess" class="success"></div>
+      <div id="formError" class="error"></div>
+    </div>
+
+    <div class="search">
+      <input id="searchBox" type="text" placeholder="Search..." />
+    </div>
+
+    <div id="filters" class="filters"></div>
+    <div id="map"></div>
+    <div id="listings"></div>
+  </div>
+
+  <div id="removalModal" class="modal-backdrop">
+    <div class="modal-card">
+      <div class="modal-title">Request Removal or Correction</div>
+      <div id="removalMeta" class="modal-meta"></div>
+
+      <input id="r_requester_name" placeholder="Your name" />
+      <input id="r_requester_contact" placeholder="Your email or phone" />
+      <textarea id="r_reason" placeholder="Tell us what should be removed or corrected"></textarea>
+
+      <div id="removalSuccess" class="success"></div>
+      <div id="removalError" class="error"></div>
+
+      <div class="modal-actions">
+        <button id="r_submit" class="modal-btn" type="button">Send Request</button>
+        <button id="r_cancel" class="modal-btn secondary" type="button">Cancel</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="embedModal" class="modal-backdrop">
+    <div class="modal-card">
+      <div class="modal-title">Embed JustOffI80</div>
+      <div class="embed-help">
+        Copy and paste this code into your website, blog, church page, nonprofit page, or community page.
+      </div>
+
+      <textarea id="embedCodeBox" class="embed-text" readonly></textarea>
+      <div id="embedCopySuccess" class="success"></div>
+      <div id="embedCopyError" class="error"></div>
+
+      <div class="modal-actions">
+        <button id="copyEmbedBtn" class="copy-btn" type="button">Copy Code</button>
+        <button id="closeEmbedBtn" class="modal-btn secondary" type="button">Close</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="qrModal" class="modal-backdrop">
+    <div class="modal-card">
+      <div class="modal-title">Listing QR Code</div>
+      <div id="qrMeta" class="modal-meta"></div>
+
+      <div id="qrCodeMount" class="qr-wrap"></div>
+      <textarea id="qrLinkBox" class="qr-link-box" readonly></textarea>
+
+      <div id="qrSuccess" class="success"></div>
+      <div id="qrError" class="error"></div>
+
+      <div class="modal-actions">
+        <button id="copyQrLinkBtn" class="copy-btn" type="button">Copy Link</button>
+        <button id="downloadQrBtn" class="download-btn" type="button">Download QR</button>
+        <button id="closeQrBtn" class="modal-btn secondary" type="button">Close</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="flyerModal" class="modal-backdrop">
+    <div class="modal-card flyer-modal-card">
+      <div class="modal-title">Listing Flyer</div>
+      <div class="flyer-help">
+        Use <strong>Print Flyer</strong> to print it, or <strong>Download PDF</strong> to save a real PDF file directly.
+      </div>
+
+      <div id="flyerPreview" class="flyer-preview"></div>
+
+      <div id="flyerSuccess" class="success"></div>
+      <div id="flyerError" class="error"></div>
+
+      <div class="modal-actions">
+        <button id="printFlyerBtn" class="print-btn" type="button">Print Flyer</button>
+        <button id="downloadFlyerPdfBtn" class="pdf-btn" type="button">Download PDF</button>
+        <button id="closeFlyerBtn" class="modal-btn secondary" type="button">Close</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+  <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
+  <script type="module">
+    import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+
+    const supabaseUrl = "https://jvnmqvdgnywtgjcyagiu.supabase.co";
+    const supabaseKey = "sb_publishable_EC399fKXbwpp4pnZfxocLA__yRyugBm";
+    const supabase = createClient(supabaseUrl, supabaseKey);
+
+    const CATEGORY_OPTIONS = [
+      "food",
+      "shelter",
+      "clothing",
+      "health",
+      "recovery",
+      "transportation",
+      "church",
+      "employment",
+      "family",
+      "legal",
+      "veterans",
+      "yard sale",
+      "business",
+      "auto",
+      "lodging",
+      "gas",
+      "community",
+      "emergency"
+    ];
+
+    let listings = [];
+    let markersById = {};
+    let cardsById = {};
+    let activeFilter = null;
+    let searchTerm = "";
+    let userMarker = null;
+    let activeRemovalListing = null;
+    let activeQrListing = null;
+    let activeQrLink = "";
+    let activeFlyerListing = null;
+
+    const EMBED_CODE = `<iframe
+  src="https://www.justoffi80.com/index.html"
+  title="JustOffI80"
+  width="100%"
+  height="800"
+  style="border:0; border-radius:12px;"
+  loading="lazy"
+  referrerpolicy="no-referrer-when-downgrade">
+</iframe>`;
+
+    const map = L.map("map").setView([41.12, -78.76], 12);
+    L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
+      attribution: "© OpenStreetMap"
+    }).addTo(map);
+    const markerGroup = L.featureGroup().addTo(map);
+
+    const redIcon = new L.Icon({
+      iconUrl: "https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-red.png",
+      shadowUrl: "https://unpkg.com/leaflet@1.9.4/dist/images/marker-shadow.png",
+      iconSize: [25, 41],
+      iconAnchor: [12, 41],
+      popupAnchor: [1, -34],
+      shadowSize: [41, 41]
+    });
+
+    function normalize(value) {
+      return String(value ?? "").trim();
+    }
+
+    function escapeHtml(value) {
+      return String(value ?? "")
+        .replaceAll("&", "&amp;")
+        .replaceAll("<", "&lt;")
+        .replaceAll(">", "&gt;")
+        .replaceAll('"', "&quot;")
+        .replaceAll("'", "&#039;");
+    }
+
+    function normalizeCategory(value) {
+      return normalize(value).toLowerCase();
+    }
+
+    function parseTypes(value) {
+      if (Array.isArray(value)) {
+        return value.map(v => normalizeCategory(v)).filter(Boolean);
+      }
+
+      const raw = normalize(value);
+      if (!raw) return [];
+
+      try {
+        const parsed = JSON.parse(raw);
+        if (Array.isArray(parsed)) {
+          return parsed.map(v => normalizeCategory(v)).filter(Boolean);
+        }
+      } catch (error) {}
+
+      return raw.split(",").map(v => normalizeCategory(v)).filter(Boolean);
+    }
+
+    function normalizeWebsiteUrl(url) {
+      const value = normalize(url);
+      if (!value) return "";
+      if (/^https?:\/\//i.test(value)) return value;
+      return `https://${value}`;
+    }
+
+    function renderSubmitCategoryOptions() {
+      const box = document.getElementById("submitCategoryGrid");
+      box.innerHTML = CATEGORY_OPTIONS.map(category => `
+        <label>
+          <input type="checkbox" name="submit_types" value="${escapeHtml(category)}">
+          <span>${escapeHtml(category)}</span>
+        </label>
+      `).join("");
+    }
+
+    function getCheckedCategories(name) {
+      return [...document.querySelectorAll(`input[name="${name}"]:checked`)]
+        .map(input => normalizeCategory(input.value))
+        .filter(Boolean);
+    }
+
+    function clearCheckedCategories(name) {
+      document.querySelectorAll(`input[name="${name}"]`).forEach(input => {
+        input.checked = false;
+      });
+    }
+
+    function makeGoogleMapsSearchUrl(address) {
+      return `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(address || "")}`;
+    }
+
+    function makeGoogleMapsDirectionsUrl(address) {
+      return `https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(address || "")}`;
+    }
+
+    function makeListingUrl(id) {
+      const base = `${window.location.origin}${window.location.pathname}`;
+      return `${base}?listing=${encodeURIComponent(id)}`;
+    }
+
+    function extractCoords(link, lat, lng) {
+      if (typeof lat === "number" && typeof lng === "number") {
+        return { lat, lng };
+      }
+
+      if (!link) return null;
+
+      let match = link.match(/@(-?\d+\.\d+),(-?\d+\.\d+)/);
+      if (match) {
+        return { lat: parseFloat(match[1]), lng: parseFloat(match[2]) };
+      }
+
+      match = link.match(/q=(-?\d+\.\d+),(-?\d+\.\d+)/);
+      if (match) {
+        return { lat: parseFloat(match[1]), lng: parseFloat(match[2]) };
+      }
+
+      return null;
+    }
+
+    function cleanPhone(phone) {
+      return (phone || "").replace(/[^0-9]/g, "");
+    }
+
+    function makeSafeFileName(value) {
+      return normalize(value || "listing")
+        .toLowerCase()
+        .replace(/[^a-z0-9]+/g, "-")
+        .replace(/^-+|-+$/g, "") || "listing";
+    }
+
+    function showFormMessage(successText = "", errorText = "") {
+      document.getElementById("formSuccess").innerText = successText;
+      document.getElementById("formError").innerText = errorText;
+    }
+
+    function showRemovalMessage(successText = "", errorText = "") {
+      document.getElementById("removalSuccess").innerText = successText;
+      document.getElementById("removalError").innerText = errorText;
+    }
+
+    function showEmbedMessage(successText = "", errorText = "") {
+      document.getElementById("embedCopySuccess").innerText = successText;
+      document.getElementById("embedCopyError").innerText = errorText;
+    }
+
+    function showQrMessage(successText = "", errorText = "") {
+      document.getElementById("qrSuccess").innerText = successText;
+      document.getElementById("qrError").innerText = errorText;
+    }
+
+    function showFlyerMessage(successText = "", errorText = "") {
+      document.getElementById("flyerSuccess").innerText = successText;
+      document.getElementById("flyerError").innerText = errorText;
+    }
+
+    function openRemovalModal(listing) {
+      activeRemovalListing = listing;
+      document.getElementById("removalMeta").innerHTML = `
+        <div><strong>Listing:</strong> ${escapeHtml(listing.name || "")}</div>
+        ${listing.town ? `<div><strong>Town:</strong> ${escapeHtml(listing.town)}</div>` : ""}
+        ${listing.location ? `<div><strong>Address:</strong> ${escapeHtml(listing.location)}</div>` : ""}
+      `;
+      document.getElementById("r_requester_name").value = "";
+      document.getElementById("r_requester_contact").value = "";
+      document.getElementById("r_reason").value = "";
+      showRemovalMessage();
+      document.getElementById("removalModal").classList.add("show");
+    }
+
+    function closeRemovalModal() {
+      activeRemovalListing = null;
+      document.getElementById("removalModal").classList.remove("show");
+    }
+
+    function openEmbedModal() {
+      document.getElementById("embedCodeBox").value = EMBED_CODE;
+      showEmbedMessage();
+      document.getElementById("embedModal").classList.add("show");
+    }
+
+    function closeEmbedModal() {
+      document.getElementById("embedModal").classList.remove("show");
+    }
+
+    function openQrModal(listing) {
+      activeQrListing = listing;
+      activeQrLink = makeListingUrl(listing.id);
+      const websiteUrl = normalizeWebsiteUrl(listing.website_url);
+
+      document.getElementById("qrMeta").innerHTML = `
+        <div><strong>Listing:</strong> ${escapeHtml(listing.name || "")}</div>
+        ${listing.town ? `<div><strong>Town:</strong> ${escapeHtml(listing.town)}</div>` : ""}
+        ${listing.location ? `<div><strong>Address:</strong> ${escapeHtml(listing.location)}</div>` : ""}
+        ${listing.contact ? `<div><strong>Phone:</strong> ${escapeHtml(listing.contact)}</div>` : ""}
+        ${websiteUrl ? `<div><strong>Website:</strong> <a href="${escapeHtml(websiteUrl)}" target="_blank" rel="noopener noreferrer">${escapeHtml(websiteUrl)}</a></div>` : ""}
+      `;
+
+      const mount = document.getElementById("qrCodeMount");
+      mount.innerHTML = "";
+      document.getElementById("qrLinkBox").value = activeQrLink;
+      showQrMessage();
+
+      new QRCode(mount, {
+        text: activeQrLink,
+        width: 220,
+        height: 220,
+        colorDark: "#111111",
+        colorLight: "#ffffff",
+        correctLevel: QRCode.CorrectLevel.H
+      });
+
+      document.getElementById("qrModal").classList.add("show");
+    }
+
+    function closeQrModal() {
+      activeQrListing = null;
+      activeQrLink = "";
+      document.getElementById("qrModal").classList.remove("show");
+    }
+
+    function buildFlyerPreviewHtml(listing) {
+      const typeBadges = Array.isArray(listing.types)
+        ? listing.types.map(type => `<span class="flyer-type-badge">${escapeHtml(type)}</span>`).join("")
+        : "";
+      const listingLink = makeListingUrl(listing.id);
+
+      return `
+        <div class="flyer-sheet" id="flyerSheet">
+          <div class="flyer-header">
+            <div class="flyer-brand">JustOffI80 Community Flyer</div>
+            <div class="flyer-name">${escapeHtml(listing.name || "")}</div>
+            ${listing.town ? `<div class="flyer-town">${escapeHtml(listing.town)}</div>` : ""}
+          </div>
+
+          ${listing.image_path ? `<img class="flyer-image" src="${escapeHtml(listing.image_path)}" alt="${escapeHtml(listing.name || "Listing image")}">` : ""}
+
+          <div class="flyer-top">
+            <div>
+              ${typeBadges ? `<div class="flyer-section-title">Categories</div><div class="flyer-type-badges">${typeBadges}</div>` : ""}
+
+              ${listing.notes ? `
+                <div class="flyer-section-title" style="margin-top:16px;">Description</div>
+                <div class="flyer-description">${escapeHtml(listing.notes)}</div>
+              ` : ""}
+
+              <div class="flyer-details">
+                ${listing.location ? `
+                  <div class="flyer-detail">
+                    <div class="flyer-detail-label">Address</div>
+                    <div class="flyer-detail-value">${escapeHtml(listing.location)}</div>
+                  </div>
+                ` : ""}
+
+                ${listing.contact ? `
+                  <div class="flyer-detail">
+                    <div class="flyer-detail-label">Phone</div>
+                    <div class="flyer-detail-value">${escapeHtml(listing.contact)}</div>
+                  </div>
+                ` : ""}
+              </div>
+            </div>
+
+            <div class="flyer-qr-box">
+              <div id="flyerQrMount"></div>
+              <div class="flyer-qr-text">Scan for listing details and map access</div>
+            </div>
+          </div>
+
+          <div class="flyer-footer">
+            <div>
+              <strong>JustOffI80</strong><br>
+              Free resource guide for Clearfield, Jefferson, and Clarion Counties
+            </div>
+            <div>
+              <div><strong>Listing Link</strong></div>
+              <div class="flyer-link">${escapeHtml(listingLink)}</div>
+            </div>
+          </div>
+        </div>
+      `;
+    }
+
+    function openFlyerModal(listing) {
+      activeFlyerListing = listing;
+      showFlyerMessage();
+      const preview = document.getElementById("flyerPreview");
+      preview.innerHTML = buildFlyerPreviewHtml(listing);
+
+      const qrMount = document.getElementById("flyerQrMount");
+      qrMount.innerHTML = "";
+
+      new QRCode(qrMount, {
+        text: makeListingUrl(listing.id),
+        width: 220,
+        height: 220,
+        colorDark: "#111111",
+        colorLight: "#ffffff",
+        correctLevel: QRCode.CorrectLevel.H
+      });
+
+      document.getElementById("flyerModal").classList.add("show");
+    }
+
+    function closeFlyerModal() {
+      activeFlyerListing = null;
+      document.getElementById("flyerModal").classList.remove("show");
+    }
+
+    function getFlyerQrDataUrl() {
+      const mount = document.getElementById("flyerQrMount");
+      const canvas = mount.querySelector("canvas");
+      const img = mount.querySelector("img");
+
+      if (canvas) return canvas.toDataURL("image/png");
+      if (img) return img.src;
+      return "";
+    }
+
+    function buildPrintableFlyerDocument(listing, qrDataUrl) {
+      const typeBadges = Array.isArray(listing.types)
+        ? listing.types.map(type => `<span class="flyer-type-badge">${escapeHtml(type)}</span>`).join("")
+        : "";
+      const listingLink = makeListingUrl(listing.id);
+
+      return `
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>${escapeHtml(listing.name || "Listing Flyer")} – JustOffI80</title>
+<style>
+  body{font-family:Arial,sans-serif;background:#ffffff;margin:0;padding:10mm;color:#111827;}
+  .sheet{max-width:none;margin:0 auto;border:none;border-radius:0;padding:0;}
+  .header{border-bottom:4px solid #2b5cff;padding-bottom:18px;margin-bottom:24px;}
+  .brand{font-size:14px;font-weight:bold;letter-spacing:.1em;text-transform:uppercase;color:#2b5cff;margin-bottom:8px;}
+  .name{font-size:42px;font-weight:800;line-height:1.05;margin-bottom:10px;}
+  .town{font-size:22px;color:#334155;font-weight:700;}
+  .top{display:grid;grid-template-columns:1fr 270px;gap:30px;align-items:start;margin-bottom:24px;}
+  .section-title{font-size:13px;text-transform:uppercase;letter-spacing:.08em;color:#64748b;font-weight:700;margin-bottom:10px;}
+  .description{font-size:19px;line-height:1.7;color:#111827;margin-bottom:22px;white-space:pre-wrap;}
+  .details{display:grid;gap:14px;margin-bottom:18px;}
+  .detail{background:#f8fafc;border:1px solid #e2e8f0;border-radius:12px;padding:16px 18px;}
+  .detail-label{font-size:12px;text-transform:uppercase;letter-spacing:.08em;color:#64748b;font-weight:700;margin-bottom:6px;}
+  .detail-value{color:#0f172a;font-size:18px;line-height:1.5;word-break:break-word;}
+  .type-badges{display:flex;flex-wrap:wrap;gap:10px;margin-bottom:8px;}
+  .flyer-type-badge{background:#eff6ff;color:#1d4ed8;border:1px solid #bfdbfe;border-radius:999px;padding:8px 14px;font-size:14px;font-weight:700;text-transform:capitalize;}
+  .flyer-image{width:100%;max-height:360px;object-fit:cover;border-radius:14px;border:1px solid #dbe3eb;margin-bottom:20px;background:#f8fafc;}
+  .qr-box{text-align:center;background:#ffffff;border:1px solid #dbe3eb;border-radius:16px;padding:20px;}
+  .qr-box img{max-width:220px;max-height:220px;display:block;margin:auto;}
+  .qr-text{margin-top:14px;font-size:16px;color:#334155;font-weight:600;line-height:1.5;}
+  .footer{border-top:1px solid #dbe3eb;margin-top:24px;padding-top:18px;font-size:15px;color:#475569;display:flex;justify-content:space-between;gap:14px;flex-wrap:wrap;}
+  .link{color:#2b5cff;font-weight:700;word-break:break-all;font-size:15px;}
+  @media print{
+    body{padding:0;}
+  }
+</style>
+</head>
+<body>
+  <div class="sheet">
+    <div class="header">
+      <div class="brand">JustOffI80 Community Flyer</div>
+      <div class="name">${escapeHtml(listing.name || "")}</div>
+      ${listing.town ? `<div class="town">${escapeHtml(listing.town)}</div>` : ""}
+    </div>
+
+    ${listing.image_path ? `<img class="flyer-image" src="${escapeHtml(listing.image_path)}" alt="${escapeHtml(listing.name || "Listing image")}">` : ""}
+
+    <div class="top">
+      <div>
+        ${typeBadges ? `<div class="section-title">Categories</div><div class="type-badges">${typeBadges}</div>` : ""}
+        ${listing.notes ? `<div class="section-title" style="margin-top:16px;">Description</div><div class="description">${escapeHtml(listing.notes)}</div>` : ""}
+        <div class="details">
+          ${listing.location ? `<div class="detail"><div class="detail-label">Address</div><div class="detail-value">${escapeHtml(listing.location)}</div></div>` : ""}
+          ${listing.contact ? `<div class="detail"><div class="detail-label">Phone</div><div class="detail-value">${escapeHtml(listing.contact)}</div></div>` : ""}
+        </div>
+      </div>
+
+      <div class="qr-box">
+        ${qrDataUrl ? `<img src="${qrDataUrl}" alt="QR code for ${escapeHtml(listing.name || "listing")}">` : ""}
+        <div class="qr-text">Scan for listing details and map access</div>
+      </div>
+    </div>
+
+    <div class="footer">
+      <div>
+        <strong>JustOffI80</strong><br>
+        Free resource guide for Clearfield, Jefferson, and Clarion Counties
+      </div>
+      <div>
+        <div><strong>Listing Link</strong></div>
+        <div class="link">${escapeHtml(listingLink)}</div>
+      </div>
+    </div>
+  </div>
+</body>
+</html>`;
+    }
+
+    function printFlyer() {
+      if (!activeFlyerListing) {
+        showFlyerMessage("", "No flyer is selected.");
+        return;
+      }
+
+      const qrDataUrl = getFlyerQrDataUrl();
+      const flyerHtml = buildPrintableFlyerDocument(activeFlyerListing, qrDataUrl);
+
+      const printWindow = window.open("", "_blank", "width=1100,height=1400");
+      if (!printWindow) {
+        showFlyerMessage("", "Popup blocked. Please allow popups to print the flyer.");
+        return;
+      }
+
+      printWindow.document.open();
+      printWindow.document.write(flyerHtml);
+      printWindow.document.close();
+      printWindow.focus();
+
+      setTimeout(() => {
+        printWindow.print();
+      }, 500);
+
+      showFlyerMessage("Print window opened.", "");
+    }
+
+    async function downloadFlyerPdf() {
+      if (!activeFlyerListing) {
+        showFlyerMessage("", "No flyer is selected.");
+        return;
+      }
+
+      const flyerSheet = document.getElementById("flyerSheet");
+      if (!flyerSheet) {
+        showFlyerMessage("", "Flyer preview is not ready.");
+        return;
+      }
+
+      showFlyerMessage("Building PDF...", "");
+
+      try {
+        const canvas = await html2canvas(flyerSheet, {
+          scale: 2.4,
+          backgroundColor: "#ffffff",
+          useCORS: true
+        });
+
+        const imgData = canvas.toDataURL("image/png");
+        const { jsPDF } = window.jspdf;
+        const pdf = new jsPDF("p", "mm", "letter");
+
+        const pageWidth = pdf.internal.pageSize.getWidth();
+        const pageHeight = pdf.internal.pageSize.getHeight();
+        const margin = 4;
+        const usableWidth = pageWidth - margin * 2;
+        const usableHeight = pageHeight - margin * 2;
+
+        const imgWidth = usableWidth;
+        const imgHeight = canvas.height * imgWidth / canvas.width;
+
+        if (imgHeight <= usableHeight) {
+          pdf.addImage(imgData, "PNG", margin, margin, imgWidth, imgHeight);
+        } else {
+          let position = 0;
+          const pageCanvas = document.createElement("canvas");
+          const pageCtx = pageCanvas.getContext("2d");
+
+          const pixelsPerMm = canvas.width / imgWidth;
+          const pageSliceHeightPx = Math.floor(usableHeight * pixelsPerMm);
+
+          pageCanvas.width = canvas.width;
+          pageCanvas.height = pageSliceHeightPx;
+
+          while (position < canvas.height) {
+            pageCtx.clearRect(0, 0, pageCanvas.width, pageCanvas.height);
+            pageCtx.fillStyle = "#ffffff";
+            pageCtx.fillRect(0, 0, pageCanvas.width, pageCanvas.height);
+
+            pageCtx.drawImage(
+              canvas,
+              0, position, canvas.width, pageSliceHeightPx,
+              0, 0, canvas.width, pageSliceHeightPx
+            );
+
+            const pageImgData = pageCanvas.toDataURL("image/png");
+            const sliceHeightMm = Math.min(usableHeight, pageSliceHeightPx / pixelsPerMm);
+
+            pdf.addImage(pageImgData, "PNG", margin, margin, imgWidth, sliceHeightMm);
+
+            position += pageSliceHeightPx;
+            if (position < canvas.height) {
+              pdf.addPage();
+            }
+          }
+        }
+
+        const safeName = makeSafeFileName(activeFlyerListing.name || "listing");
+        pdf.save(`${safeName}-flyer.pdf`);
+        showFlyerMessage("PDF downloaded.", "");
+      } catch (error) {
+        showFlyerMessage("", "PDF download failed. Please try again.");
+      }
+    }
+
+    async function copyEmbedCode() {
+      const code = document.getElementById("embedCodeBox").value;
+      showEmbedMessage();
+
+      try {
+        await navigator.clipboard.writeText(code);
+        showEmbedMessage("Embed code copied.", "");
+      } catch (error) {
+        const box = document.getElementById("embedCodeBox");
+        box.focus();
+        box.select();
+        try {
+          document.execCommand("copy");
+          showEmbedMessage("Embed code copied.", "");
+        } catch (fallbackError) {
+          showEmbedMessage("", "Copy failed. Please select and copy the code manually.");
+        }
+      }
+    }
+
+    async function copyQrLink() {
+      showQrMessage();
+
+      try {
+        await navigator.clipboard.writeText(activeQrLink);
+        showQrMessage("Listing link copied.", "");
+      } catch (error) {
+        const box = document.getElementById("qrLinkBox");
+        box.focus();
+        box.select();
+        try {
+          document.execCommand("copy");
+          showQrMessage("Listing link copied.", "");
+        } catch (fallbackError) {
+          showQrMessage("", "Copy failed. Please copy the link manually.");
+        }
+      }
+    }
+
+    function downloadQrImage() {
+      const mount = document.getElementById("qrCodeMount");
+      const canvas = mount.querySelector("canvas");
+      const img = mount.querySelector("img");
+      let dataUrl = "";
+
+      if (canvas) {
+        dataUrl = canvas.toDataURL("image/png");
+      } else if (img) {
+        dataUrl = img.src;
+      }
+
+      if (!dataUrl) {
+        showQrMessage("", "QR image not ready yet.");
+        return;
+      }
+
+      const safeName = makeSafeFileName(activeQrListing?.name || "listing");
+
+      const a = document.createElement("a");
+      a.href = dataUrl;
+      a.download = `${safeName}-qr.png`;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+
+      showQrMessage("QR code downloaded.", "");
+    }
+
+    async function submitRemovalRequest() {
+      if (!activeRemovalListing) return;
+
+      const submitBtn = document.getElementById("r_submit");
+      const requester_name = normalize(document.getElementById("r_requester_name").value);
+      const requester_contact = normalize(document.getElementById("r_requester_contact").value);
+      const reason = normalize(document.getElementById("r_reason").value);
+
+      showRemovalMessage();
+
+      if (!reason) {
+        showRemovalMessage("", "Please enter a reason for the removal or correction request.");
+        return;
+      }
+
+      submitBtn.disabled = true;
+      submitBtn.innerText = "Sending...";
+
+      const { data, error } = await supabase.functions.invoke("send-removal-request", {
+        body: {
+          listing_id: activeRemovalListing.id || null,
+          listing_name: activeRemovalListing.name || "",
+          town: activeRemovalListing.town || "",
+          location: activeRemovalListing.location || "",
+          requester_name,
+          requester_contact,
+          reason
+        }
+      });
+
+      submitBtn.disabled = false;
+      submitBtn.innerText = "Send Request";
+
+      if (error) {
+        showRemovalMessage("", `Request failed: ${error.message}`);
+        return;
+      }
+
+      if (data?.error) {
+        showRemovalMessage("", `Request failed: ${data.error}`);
+        return;
+      }
+
+      showRemovalMessage("Request sent. Thank you.", "");
+      setTimeout(closeRemovalModal, 900);
+    }
+
+    async function uploadListingImage(file, listingName) {
+      if (!file) return null;
+
+      const allowedTypes = ["image/jpeg", "image/png", "image/webp"];
+      if (!allowedTypes.includes(file.type)) {
+        throw new Error("Only JPG, PNG, or WEBP images are allowed.");
+      }
+
+      if (file.size > 2 * 1024 * 1024) {
+        throw new Error("Image must be under 2MB.");
+      }
+
+      const extension = (file.name.split(".").pop() || "jpg").toLowerCase();
+      const safeBase = makeSafeFileName(listingName);
+      const fileName = `${safeBase}-${Date.now()}.${extension}`;
+      const filePath = `listings/${fileName}`;
+
+      const { error: uploadError } = await supabase
+        .storage
+        .from("flyers")
+        .upload(filePath, file, {
+          cacheControl: "3600",
+          upsert: false
+        });
+
+      if (uploadError) {
+        throw new Error(uploadError.message || "Image upload failed.");
+      }
+
+      const { data } = supabase
+        .storage
+        .from("flyers")
+        .getPublicUrl(filePath);
+
+      return data?.publicUrl || null;
+    }
+
+    window.toggleForm = function () {
+      const form = document.getElementById("submissionForm");
+      form.style.display = form.style.display === "none" ? "block" : "none";
+    };
+
+    window.submitListing = async function () {
+      const submitBtn = document.getElementById("submitBtn");
+
+      const name = normalize(document.getElementById("s_name").value);
+      const types = getCheckedCategories("submit_types");
+      const location = normalize(document.getElementById("s_location").value);
+      const contact = normalize(document.getElementById("s_contact").value);
+      const website_url = normalizeWebsiteUrl(document.getElementById("s_website").value);
+      const map_link = normalize(document.getElementById("s_map_link").value);
+      const notes = normalize(document.getElementById("s_notes").value);
+      const imageFile = document.getElementById("s_image").files[0] || null;
+
+      showFormMessage();
+
+      if (!name || !location) {
+        showFormMessage("", "Name and Address are required.");
+        return;
+      }
+
+      if (types.length === 0) {
+        showFormMessage("", "Please select at least one category.");
+        return;
+      }
+
+      submitBtn.disabled = true;
+      submitBtn.innerText = "Submitting...";
+
+      try {
+        let image_path = null;
+
+        if (imageFile) {
+          image_path = await uploadListingImage(imageFile, name);
+        }
+
+        const payload = {
+          name,
+          types,
+          location,
+          contact,
+          website_url,
+          notes,
+          map_link,
+          image_path
+        };
+
+        const { error } = await supabase
+          .from("listing_submissions")
+          .insert([payload]);
+
+        if (error) {
+          throw new Error(error.message);
+        }
+
+        showFormMessage("Submitted for approval.", "");
+
+        document.getElementById("s_name").value = "";
+        document.getElementById("s_town").value = "";
+        document.getElementById("s_location").value = "";
+        document.getElementById("s_contact").value = "";
+        document.getElementById("s_website").value = "";
+        document.getElementById("s_map_link").value = "";
+        document.getElementById("s_notes").value = "";
+        document.getElementById("s_image").value = "";
+        clearCheckedCategories("submit_types");
+      } catch (error) {
+        showFormMessage("", `Submission failed: ${error.message || error}`);
+      } finally {
+        submitBtn.disabled = false;
+        submitBtn.innerText = "Submit";
+      }
+    };
+
+    function openListingById(id) {
+      const listing = listings.find(item => item.id === id);
+      if (!listing) return;
+
+      const marker = markersById[id];
+      const card = cardsById[id];
+
+      if (marker) {
+        map.setView(marker.getLatLng(), 16, { animate: true });
+        marker.openPopup();
+      }
+
+      if (card) {
+        card.classList.add("highlight");
+        card.scrollIntoView({ behavior: "smooth", block: "center" });
+        setTimeout(() => card.classList.remove("highlight"), 2500);
+      }
+    }
+
+    async function loadListings() {
+      const { data, error } = await supabase
+        .from("listings_core")
+        .select("id, name, types, town, location, contact, website_url, notes, lat, lng, map_link, image_path, approved")
+        .eq("approved", true)
+        .order("name", { ascending: true });
+
+      if (error) {
+        document.getElementById("listings").innerHTML = `<div class="card">Failed to load listings: ${escapeHtml(error.message)}</div>`;
+        return;
+      }
+
+      listings = (data || []).map(row => ({
+        ...row,
+        website_url: normalizeWebsiteUrl(row.website_url),
+        types: parseTypes(row.types)
+      }));
+
+      renderFilters();
+      renderListings();
+
+      const urlParams = new URLSearchParams(window.location.search);
+      const listingId = urlParams.get("listing");
+      if (listingId) {
+        setTimeout(() => openListingById(listingId), 300);
+      }
+    }
+
+    function renderFilters() {
+      const filterBox = document.getElementById("filters");
+      filterBox.innerHTML = "";
+
+      const allTypes = new Set();
+      listings.forEach(l => {
+        if (Array.isArray(l.types)) {
+          l.types.forEach(t => allTypes.add(String(t).toLowerCase()));
+        }
+      });
+
+      const allButton = document.createElement("div");
+      allButton.className = "filter active";
+      allButton.innerText = "All";
+      allButton.onclick = () => {
+        activeFilter = null;
+        renderListings();
+        updateActive(allButton);
+      };
+      filterBox.appendChild(allButton);
+
+      [...allTypes].sort().forEach(type => {
+        const btn = document.createElement("div");
+        btn.className = "filter";
+        btn.innerText = type;
+        btn.onclick = () => {
+          activeFilter = type;
+          renderListings();
+          updateActive(btn);
+        };
+        filterBox.appendChild(btn);
+      });
+    }
+
+    function updateActive(btn) {
+      document.querySelectorAll(".filter").forEach(f => f.classList.remove("active"));
+      btn.classList.add("active");
+    }
+
+    function highlightCard(id) {
+      const card = cardsById[id];
+      if (!card) return;
+      card.classList.add("highlight");
+      card.scrollIntoView({ behavior: "smooth", block: "center" });
+      setTimeout(() => card.classList.remove("highlight"), 2000);
+    }
+
+    function renderListings() {
+      const container = document.getElementById("listings");
+      container.innerHTML = "";
+      markerGroup.clearLayers();
+      markersById = {};
+      cardsById = {};
+
+      let filtered = listings;
+
+      if (activeFilter) {
+        filtered = filtered.filter(l => Array.isArray(l.types) && l.types.includes(activeFilter));
+      }
+
+      if (searchTerm) {
+        filtered = filtered.filter(l => {
+          const typeText = Array.isArray(l.types) ? l.types.join(" ") : "";
+          const text = `${l.name || ""} ${l.town || ""} ${l.location || ""} ${l.notes || ""} ${typeText}`.toLowerCase();
+          return text.includes(searchTerm.toLowerCase());
+        });
+      }
+
+      filtered.forEach(l => {
+        const coords = extractCoords(l.map_link, l.lat, l.lng);
+
+        if (coords) {
+          const phoneClean = cleanPhone(l.contact);
+          const websiteLink = l.website_url
+            ? ` | <a target="_blank" rel="noopener noreferrer" href="${escapeHtml(l.website_url)}">Website</a>`
+            : "";
+
+          const popupContent = `
+            <b>${escapeHtml(l.name || "")}</b><br>
+            ${escapeHtml(l.town || "") ? `<div>${escapeHtml(l.town)}</div>` : ""}
+            ${escapeHtml(l.notes || "") ? `<div style="margin:8px 0;color:#444;">${escapeHtml(l.notes)}</div>` : ""}
+            <a target="_blank" href="${makeGoogleMapsSearchUrl(l.location || "")}">${escapeHtml(l.location || "")}</a><br><br>
+            <a href="tel:${phoneClean}">Call</a> |
+            <a target="_blank" href="${makeGoogleMapsDirectionsUrl(l.location || "")}">Directions</a>
+            ${websiteLink}
+          `;
+
+          const marker = L.marker([coords.lat, coords.lng])
+            .addTo(markerGroup)
+            .bindPopup(popupContent);
+
+          marker.on("click", () => highlightCard(l.id));
+          markersById[l.id] = marker;
+        }
+
+        const phoneClean = cleanPhone(l.contact);
+        const mapsSearchUrl = makeGoogleMapsSearchUrl(l.location || "");
+        const directionsUrl = makeGoogleMapsDirectionsUrl(l.location || "");
+        const typeBadges = Array.isArray(l.types)
+          ? l.types.map(type => `<span class="type-badge">${escapeHtml(type)}</span>`).join("")
+          : "";
+
+        const imageHtml = l.image_path
+          ? `<img class="listing-image" src="${escapeHtml(l.image_path)}" alt="${escapeHtml(l.name || "Listing image")}">`
+          : "";
+
+        const websiteHtml = l.website_url
+          ? `
+            <div class="website-row">
+              <a class="website-link" href="${escapeHtml(l.website_url)}" target="_blank" rel="noopener noreferrer">
+                🌐 Visit Website
+              </a>
+            </div>
+          `
+          : "";
+
+        const card = document.createElement("div");
+        card.className = "card";
+
+        card.addEventListener("click", (event) => {
+          if (event.target.closest("a,button")) return;
+
+          const marker = markersById[l.id];
+          if (marker) {
+            map.setView(marker.getLatLng(), 16, { animate: true });
+            marker.openPopup();
+          }
+        });
+
+        card.innerHTML = `
+          <div class="name">${escapeHtml(l.name || "")}</div>
+          ${l.town ? `<div class="town-row">${escapeHtml(l.town)}</div>` : ""}
+          ${typeBadges ? `<div class="type-badges">${typeBadges}</div>` : ""}
+          ${imageHtml}
+          <div class="address">
+            <a href="${mapsSearchUrl}" target="_blank" rel="noopener noreferrer">
+              ${escapeHtml(l.location || "")}
+            </a>
+          </div>
+          <div>${escapeHtml(l.notes || "")}</div>
+          <div>Phone: ${escapeHtml(l.contact || "")}</div>
+          ${websiteHtml}
+          <div class="buttons">
+            <a class="btn call" href="tel:${phoneClean}">Call</a>
+            <a class="btn directions" target="_blank" rel="noopener noreferrer" href="${directionsUrl}">Directions</a>
+            <button class="btn qr" type="button">QR Code</button>
+            <button class="btn flyer" type="button">Flyer</button>
+            <button class="btn remove" type="button">Request Removal</button>
+          </div>
+        `;
+
+        card.querySelector(".remove").addEventListener("click", (event) => {
+          event.preventDefault();
+          event.stopPropagation();
+          openRemovalModal(l);
+        });
+
+        card.querySelector(".qr").addEventListener("click", (event) => {
+          event.preventDefault();
+          event.stopPropagation();
+          openQrModal(l);
+        });
+
+        card.querySelector(".flyer").addEventListener("click", (event) => {
+          event.preventDefault();
+          event.stopPropagation();
+          openFlyerModal(l);
+        });
+
+        container.appendChild(card);
+        cardsById[l.id] = card;
+      });
+
+      if (filtered.length === 0) {
+        container.innerHTML = `<div class="card">No listings found.</div>`;
+      }
+    }
+
+    document.getElementById("searchBox").addEventListener("input", e => {
+      searchTerm = e.target.value;
+      renderListings();
+    });
+
+    document.getElementById("locateBtn").addEventListener("click", () => {
+      if (!navigator.geolocation) return;
+
+      navigator.geolocation.getCurrentPosition(position => {
+        const lat = position.coords.latitude;
+        const lng = position.coords.longitude;
+        map.setView([lat, lng], 14);
+
+        if (userMarker) map.removeLayer(userMarker);
+
+        userMarker = L.marker([lat, lng], { icon: redIcon })
+          .addTo(map)
+          .bindPopup("<b>You Are Here</b>")
+          .openPopup();
+      });
+    });
+
+    document.getElementById("r_submit").addEventListener("click", submitRemovalRequest);
+    document.getElementById("r_cancel").addEventListener("click", closeRemovalModal);
+    document.getElementById("removalModal").addEventListener("click", (event) => {
+      if (event.target.id === "removalModal") closeRemovalModal();
+    });
+
+    document.getElementById("openEmbedBtn").addEventListener("click", openEmbedModal);
+    document.getElementById("closeEmbedBtn").addEventListener("click", closeEmbedModal);
+    document.getElementById("copyEmbedBtn").addEventListener("click", copyEmbedCode);
+    document.getElementById("embedModal").addEventListener("click", (event) => {
+      if (event.target.id === "embedModal") closeEmbedModal();
+    });
+
+    document.getElementById("copyQrLinkBtn").addEventListener("click", copyQrLink);
+    document.getElementById("downloadQrBtn").addEventListener("click", downloadQrImage);
+    document.getElementById("closeQrBtn").addEventListener("click", closeQrModal);
+    document.getElementById("qrModal").addEventListener("click", (event) => {
+      if (event.target.id === "qrModal") closeQrModal();
+    });
+
+    document.getElementById("printFlyerBtn").addEventListener("click", printFlyer);
+    document.getElementById("downloadFlyerPdfBtn").addEventListener("click", downloadFlyerPdf);
+    document.getElementById("closeFlyerBtn").addEventListener("click", closeFlyerModal);
+    document.getElementById("flyerModal").addEventListener("click", (event) => {
+      if (event.target.id === "flyerModal") closeFlyerModal();
+    });
+
+    renderSubmitCategoryOptions();
+    loadListings();
+  </script>
+</body>
+</html>
